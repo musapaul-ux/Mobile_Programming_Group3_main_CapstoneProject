@@ -7,9 +7,9 @@ import androidx.room.PrimaryKey
 data class Complaint(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
-    val category: String,
+    val title: String,
     val description: String,
-    val roomNumber: String,
     val status: String = "Pending",
+    val userId: Int,
     val timestamp: Long = System.currentTimeMillis()
 )
