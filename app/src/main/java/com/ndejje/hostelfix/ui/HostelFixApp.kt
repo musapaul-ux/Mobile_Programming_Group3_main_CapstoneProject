@@ -1,6 +1,7 @@
 package com.ndejje.hostelfix.ui
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
@@ -40,7 +41,7 @@ fun HostelFixApp() {
                     }
                 },
                 onNavigateToRegister = { 
-                    authViewModel.logout() // Reset state before going to register
+                    authViewModel.logout()
                     navController.navigate(Screen.Register.route) 
                 }
             )
@@ -49,7 +50,6 @@ fun HostelFixApp() {
             RegisterScreen(
                 viewModel = authViewModel,
                 onRegisterSuccess = { _ ->
-                    // After successful registration, reset state and go to login
                     authViewModel.logout()
                     navController.navigate(Screen.Login.route) {
                         popUpTo(Screen.Register.route) { inclusive = true }
@@ -62,53 +62,81 @@ fun HostelFixApp() {
             )
         }
         composable(Screen.StudentHome.route) {
-            StudentHomeScreen(
-                onNavigateToCreateComplaint = { navController.navigate(Screen.CreateComplaint.route) },
-                onNavigateToMyComplaints = { navController.navigate(Screen.MyComplaints.route) },
-                onNavigateToProfile = { navController.navigate(Screen.Profile.route) }
-            )
-        }
-        composable(Screen.AdminHome.route) {
-            AdminHomeScreen(
-                onNavigateToComplaints = { navController.navigate(Screen.AdminComplaints.route) },
-                onNavigateToUsers = { navController.navigate(Screen.AdminUsers.route) },
-                onLogout = {
-                    authViewModel.logout()
+            if (currentUser == null || currentUser?.role != "Student") {
+                LaunchedEffect(Unit) {
                     navController.navigate(Screen.Login.route) {
                         popUpTo(0)
                     }
                 }
-            )
+            } else {
+                StudentHomeScreen(
+                    onNavigateToCreateComplaint = { navController.navigate(Screen.CreateComplaint.route) },
+                    onNavigateToMyComplaints = { navController.navigate(Screen.MyComplaints.route) },
+                    onNavigateToProfile = { navController.navigate(Screen.Profile.route) }
+                )
+            }
+        }
+        composable(Screen.AdminHome.route) {
+            if (currentUser == null || currentUser?.role != "Admin") {
+                LaunchedEffect(Unit) {
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(0)
+                    }
+                }
+            } else {
+                AdminHomeScreen(
+                    onNavigateToComplaints = { navController.navigate(Screen.AdminComplaints.route) },
+                    onNavigateToUsers = { navController.navigate(Screen.AdminUsers.route) },
+                    onLogout = {
+                        authViewModel.logout()
+                        navController.navigate(Screen.Login.route) {
+                            popUpTo(0)
+                        }
+                    }
+                )
+            }
         }
         composable(Screen.CreateComplaint.route) {
             currentUser?.let { user ->
-                CreateComplaintScreen(
-                    userId = user.id,
-                    viewModel = complaintViewModel,
-                    onComplaintSubmitted = { navController.popBackStack() }
-                )
+                if (user.role == "Student") {
+                    CreateComplaintScreen(
+                        userId = user.id,
+                        viewModel = complaintViewModel,
+                        onComplaintSubmitted = { navController.popBackStack() }
+                    )
+                }
             }
         }
         composable(Screen.MyComplaints.route) {
             currentUser?.let { user ->
-                MyComplaintsScreen(
-                    userId = user.id,
-                    viewModel = complaintViewModel,
-                    onNavigateBack = { navController.popBackStack() }
-                )
+                if (user.role == "Student") {
+                    MyComplaintsScreen(
+                        userId = user.id,
+                        viewModel = complaintViewModel,
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
             }
         }
         composable(Screen.AdminComplaints.route) {
-            AdminComplaintsScreen(
-                viewModel = complaintViewModel,
-                onNavigateBack = { navController.popBackStack() }
-            )
+            currentUser?.let { user ->
+                if (user.role == "Admin") {
+                    AdminComplaintsScreen(
+                        viewModel = complaintViewModel,
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
+            }
         }
         composable(Screen.AdminUsers.route) {
-            AdminUsersScreen(
-                userRepository = app.userRepository,
-                onNavigateBack = { navController.popBackStack() }
-            )
+            currentUser?.let { user ->
+                if (user.role == "Admin") {
+                    AdminUsersScreen(
+                        userRepository = app.userRepository,
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
+            }
         }
         composable(Screen.Profile.route) {
             currentUser?.let { user ->
