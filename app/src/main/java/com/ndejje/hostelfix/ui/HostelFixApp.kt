@@ -27,12 +27,10 @@ import com.ndejje.hostelfix.viewmodel.AuthViewModel
 import com.ndejje.hostelfix.viewmodel.ComplaintViewModel
 
 sealed class BottomNavItem(val screen: Screen, val labelRes: Int, val icon: ImageVector) {
-    // Student items
     object Home : BottomNavItem(Screen.StudentHome, R.string.welcome_title, Icons.Default.Home)
     object MyComplaints : BottomNavItem(Screen.MyComplaints, R.string.my_complaints, Icons.Default.List)
     object Profile : BottomNavItem(Screen.Profile, R.string.profile, Icons.Default.Person)
 
-    // Admin items
     object AdminDashboard : BottomNavItem(Screen.AdminHome, R.string.admin_dashboard, Icons.Default.Home)
     object AdminComplaints : BottomNavItem(Screen.AdminComplaints, R.string.all_complaints, Icons.Default.List)
     object AdminUsers : BottomNavItem(Screen.AdminUsers, R.string.user_management, Icons.Default.Person)
@@ -51,7 +49,7 @@ fun HostelFixApp() {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
 
-    val showBars = currentDestination?.route !in listOf(Screen.Login.route, Screen.Register.route)
+    val showBars = currentDestination?.route !in listOf(Screen.Welcome.route, Screen.Login.route, Screen.Register.route)
 
     Scaffold(
         topBar = {
@@ -112,20 +110,27 @@ fun HostelFixApp() {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = Screen.Login.route,
+            startDestination = Screen.Welcome.route,
             modifier = Modifier.padding(innerPadding)
         ) {
+            composable(Screen.Welcome.route) {
+                WelcomeScreen(
+                    onGetStarted = {
+                        navController.navigate(Screen.Login.route)
+                    }
+                )
+            }
             composable(Screen.Login.route) {
                 LoginScreen(
                     viewModel = authViewModel,
                     onLoginSuccess = { role ->
                         if (role == "Admin") {
                             navController.navigate(Screen.AdminHome.route) {
-                                popUpTo(Screen.Login.route) { inclusive = true }
+                                popUpTo(Screen.Welcome.route) { inclusive = true }
                             }
                         } else {
                             navController.navigate(Screen.StudentHome.route) {
-                                popUpTo(Screen.Login.route) { inclusive = true }
+                                popUpTo(Screen.Welcome.route) { inclusive = true }
                             }
                         }
                     },
