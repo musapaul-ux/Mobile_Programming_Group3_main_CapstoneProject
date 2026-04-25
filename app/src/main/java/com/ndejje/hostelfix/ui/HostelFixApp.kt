@@ -238,6 +238,7 @@ fun HostelFixApp() {
                 currentUser?.let { user ->
                     ProfileScreen(
                         user = user,
+                        userRepository = app.userRepository,
                         onLogout = {
                             authViewModel.logout()
                             navController.navigate(Screen.Login.route) {

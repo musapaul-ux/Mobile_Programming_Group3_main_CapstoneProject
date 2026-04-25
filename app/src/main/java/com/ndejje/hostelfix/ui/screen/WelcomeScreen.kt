@@ -19,9 +19,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ndejje.hostelfix.R
 
+/**
+ * The initial landing page of the application.
+ * Introduces the user to Hostel Fix and provides the entry point to the authentication flow.
+ */
 @Composable
 fun WelcomeScreen(
-    onGetStarted: () -> Unit
+    onGetStarted: () -> Unit // Callback triggered when the user clicks the "Get Started" button
 ) {
     Column(
         modifier = Modifier
@@ -31,7 +35,7 @@ fun WelcomeScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // Hero Image Area
+        // Hero Image / Branding Area
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -40,7 +44,7 @@ fun WelcomeScreen(
                 .background(MaterialTheme.colorScheme.primaryContainer),
             contentAlignment = Alignment.Center
         ) {
-            // Using Icons.Default.Home as a placeholder for a hostel image
+            // A visual representation of a hostel (Placeholder icon used)
             Image(
                 imageVector = Icons.Default.Home,
                 contentDescription = null,
@@ -52,6 +56,7 @@ fun WelcomeScreen(
 
         Spacer(modifier = Modifier.height(dimensionResource(R.dimen.spacer_large)))
 
+        // Main App Title
         Text(
             text = stringResource(R.string.welcome_title),
             style = MaterialTheme.typography.displaySmall,
@@ -61,6 +66,7 @@ fun WelcomeScreen(
 
         Spacer(modifier = Modifier.height(dimensionResource(R.dimen.spacer_medium)))
 
+        // High-level value proposition
         Text(
             text = stringResource(R.string.welcome_headline),
             style = MaterialTheme.typography.headlineSmall,
@@ -69,6 +75,7 @@ fun WelcomeScreen(
 
         Spacer(modifier = Modifier.height(dimensionResource(R.dimen.spacer_medium)))
 
+        // Supporting description for the user
         Text(
             text = stringResource(R.string.welcome_description),
             style = MaterialTheme.typography.bodyLarge,
@@ -78,6 +85,7 @@ fun WelcomeScreen(
 
         Spacer(modifier = Modifier.weight(1f))
 
+        // Navigation Action to Login/Register
         Button(
             onClick = onGetStarted,
             modifier = Modifier
