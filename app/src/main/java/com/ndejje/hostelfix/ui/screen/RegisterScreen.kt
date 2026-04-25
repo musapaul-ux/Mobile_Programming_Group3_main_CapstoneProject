@@ -22,8 +22,9 @@ fun RegisterScreen(
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var role by remember { mutableStateOf("Student") }
     val authState by viewModel.authState.collectAsState()
+    
+    var showError by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -36,36 +37,56 @@ fun RegisterScreen(
         Spacer(modifier = Modifier.height(dimensionResource(R.dimen.spacer_large)))
         OutlinedTextField(
             value = name,
-            onValueChange = { name = it },
+            onValueChange = { 
+                name = it
+                showError = false
+            },
             label = { Text(stringResource(R.string.name)) },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            isError = showError && name.isBlank()
         )
         Spacer(modifier = Modifier.height(dimensionResource(R.dimen.spacer_medium)))
         OutlinedTextField(
             value = email,
-            onValueChange = { email = it },
+            onValueChange = { 
+                email = it
+                showError = false
+            },
             label = { Text(stringResource(R.string.email)) },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            isError = showError && email.isBlank()
         )
         Spacer(modifier = Modifier.height(dimensionResource(R.dimen.spacer_medium)))
         OutlinedTextField(
             value = password,
-            onValueChange = { password = it },
+            onValueChange = { 
+                password = it
+                showError = false
+            },
             label = { Text(stringResource(R.string.password)) },
             visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            isError = showError && password.isBlank()
         )
-        Spacer(modifier = Modifier.height(dimensionResource(R.dimen.spacer_medium)))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            RadioButton(selected = role == stringResource(R.string.student), onClick = { role = "Student" })
-            Text(stringResource(R.string.student))
-            Spacer(modifier = Modifier.width(dimensionResource(R.dimen.spacer_medium)))
-            RadioButton(selected = role == stringResource(R.string.admin), onClick = { role = "Admin" })
-            Text(stringResource(R.string.admin))
-        }
         Spacer(modifier = Modifier.height(dimensionResource(R.dimen.spacer_large)))
+        
+        if (showError) {
+            Text(
+                text = "All fields are required",
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.labelMedium,
+                modifier = Modifier.padding(bottom = dimensionResource(R.dimen.padding_small))
+            )
+        }
+
         Button(
-            onClick = { viewModel.register(User(name = name, email = email, password = password, role = role)) },
+            onClick = { 
+                if (name.isNotBlank() && email.isNotBlank() && password.isNotBlank()) {
+                    viewModel.register(User(name = name, email = email, password = password, role = "Student")) 
+                } else {
+                    showError = true
+                }
+            },
             modifier = Modifier.fillMaxWidth(),
             enabled = authState !is AuthState.Loading
         ) {

@@ -2,6 +2,7 @@ package com.ndejje.hostelfix.ui
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Person
@@ -28,6 +29,7 @@ import com.ndejje.hostelfix.viewmodel.ComplaintViewModel
 
 sealed class BottomNavItem(val screen: Screen, val labelRes: Int, val icon: ImageVector) {
     object Home : BottomNavItem(Screen.StudentHome, R.string.welcome_title, Icons.Default.Home)
+    object AddComplaint : BottomNavItem(Screen.CreateComplaint, R.string.submit_complaint, Icons.Default.Add)
     object MyComplaints : BottomNavItem(Screen.MyComplaints, R.string.my_complaints, Icons.Default.List)
     object Profile : BottomNavItem(Screen.Profile, R.string.profile, Icons.Default.Person)
 
@@ -81,7 +83,7 @@ fun HostelFixApp() {
                 val items = if (currentUser?.role == "Admin") {
                     listOf(BottomNavItem.AdminDashboard, BottomNavItem.AdminComplaints, BottomNavItem.AdminUsers)
                 } else {
-                    listOf(BottomNavItem.Home, BottomNavItem.MyComplaints, BottomNavItem.Profile)
+                    listOf(BottomNavItem.Home, BottomNavItem.AddComplaint, BottomNavItem.MyComplaints, BottomNavItem.Profile)
                 }
 
                 NavigationBar(

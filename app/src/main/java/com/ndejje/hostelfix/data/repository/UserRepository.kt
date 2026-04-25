@@ -12,4 +12,18 @@ class UserRepository(private val userDao: UserDao) {
     suspend fun getUserByEmail(email: String) = userDao.getUserByEmail(email)
 
     suspend fun deleteUser(user: User) = userDao.deleteUser(user)
+    
+    suspend fun createDefaultAdmin() {
+        val admin = userDao.getUserByEmail("admin@hostelfix.com")
+        if (admin == null) {
+            userDao.insertUser(
+                User(
+                    name = "System Admin",
+                    email = "admin@hostelfix.com",
+                    password = "admin",
+                    role = "Admin"
+                )
+            )
+        }
+    }
 }

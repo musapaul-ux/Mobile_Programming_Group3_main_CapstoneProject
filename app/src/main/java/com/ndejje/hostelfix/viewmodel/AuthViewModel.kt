@@ -16,6 +16,12 @@ class AuthViewModel(private val repository: UserRepository) : ViewModel() {
     private val _authState = MutableStateFlow<AuthState>(AuthState.Idle)
     val authState: StateFlow<AuthState> = _authState
 
+    init {
+        viewModelScope.launch {
+            repository.createDefaultAdmin()
+        }
+    }
+
     fun login(email: String, password: String) {
         viewModelScope.launch {
             _authState.value = AuthState.Loading
