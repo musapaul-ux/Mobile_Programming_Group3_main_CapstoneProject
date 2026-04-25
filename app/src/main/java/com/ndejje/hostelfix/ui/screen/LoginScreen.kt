@@ -22,11 +22,6 @@ fun LoginScreen(
     var password by remember { mutableStateOf("") }
     val authState by viewModel.authState.collectAsState()
 
-    // Reset state when entering the screen to avoid infinite loops
-    DisposableEffect(Unit) {
-        onDispose { /* No-op */ }
-    }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -73,12 +68,11 @@ fun LoginScreen(
             )
         }
 
-        // Trigger navigation ONLY when Success is emitted
         LaunchedEffect(authState) {
             if (authState is AuthState.Success) {
                 val role = (authState as AuthState.Success).role
                 onLoginSuccess(role)
-                viewModel.resetState() // New method to clear state after navigation
+                viewModel.resetState()
             }
         }
     }
