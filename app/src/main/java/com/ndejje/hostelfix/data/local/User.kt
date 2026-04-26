@@ -13,6 +13,7 @@ data class User(
     val id: Int = 0,         // Unique identifier for the user
     val name: String,        // Full name of the user
     val email: String,       // Login email address
-    val password: String,    // Plain text password (for simplicity in this capstone)
-    val role: String         // Role determining access levels: "Student" or "Admin"
+    val password: String,    // Plain text password
+    val role: String,        // Role: "Student" or "Admin"
+    val profilePictureUri: String? = null // URI to the local storage of the profile picture
 )

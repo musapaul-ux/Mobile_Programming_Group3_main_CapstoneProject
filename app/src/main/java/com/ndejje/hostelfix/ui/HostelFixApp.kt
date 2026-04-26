@@ -3,6 +3,7 @@ package com.ndejje.hostelfix.ui
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Person
@@ -27,13 +28,21 @@ import com.ndejje.hostelfix.viewmodel.AppViewModelProvider
 import com.ndejje.hostelfix.viewmodel.AuthViewModel
 import com.ndejje.hostelfix.viewmodel.ComplaintViewModel
 
+/**
+ * Defines the items to be displayed in the Bottom Navigation Bar.
+ */
 sealed class BottomNavItem(val screen: Screen, val labelRes: Int, val icon: ImageVector) {
-    object Home : BottomNavItem(Screen.StudentHome, R.string.welcome_title, Icons.Default.Home)
+    // Universal items
+    object WelcomeHome : BottomNavItem(Screen.Welcome, R.string.app_name, Icons.Default.Home)
+    
+    // Student items
+    object StudentDashboard : BottomNavItem(Screen.StudentHome, R.string.welcome_title, Icons.Default.Dashboard)
     object AddComplaint : BottomNavItem(Screen.CreateComplaint, R.string.submit_complaint, Icons.Default.Add)
     object MyComplaints : BottomNavItem(Screen.MyComplaints, R.string.my_complaints, Icons.Default.List)
     object Profile : BottomNavItem(Screen.Profile, R.string.profile, Icons.Default.Person)
 
-    object AdminDashboard : BottomNavItem(Screen.AdminHome, R.string.admin_dashboard, Icons.Default.Home)
+    // Admin items
+    object AdminDashboard : BottomNavItem(Screen.AdminHome, R.string.admin_dashboard, Icons.Default.Dashboard)
     object AdminComplaints : BottomNavItem(Screen.AdminComplaints, R.string.all_complaints, Icons.Default.List)
     object AdminUsers : BottomNavItem(Screen.AdminUsers, R.string.user_management, Icons.Default.Person)
 }
@@ -51,6 +60,7 @@ fun HostelFixApp() {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
 
+    // Logic to show/hide Top and Bottom bars based on the current screen
     val showBars = currentDestination?.route !in listOf(Screen.Welcome.route, Screen.Login.route, Screen.Register.route)
 
     Scaffold(
@@ -80,10 +90,22 @@ fun HostelFixApp() {
         },
         bottomBar = {
             if (showBars) {
+                // Determine navigation items based on user role
                 val items = if (currentUser?.role == "Admin") {
-                    listOf(BottomNavItem.AdminDashboard, BottomNavItem.AdminComplaints, BottomNavItem.AdminUsers)
+                    listOf(
+                        BottomNavItem.WelcomeHome, 
+                        BottomNavItem.AdminDashboard, 
+                        BottomNavItem.AdminComplaints, 
+                        BottomNavItem.AdminUsers
+                    )
                 } else {
-                    listOf(BottomNavItem.Home, BottomNavItem.AddComplaint, BottomNavItem.MyComplaints, BottomNavItem.Profile)
+                    listOf(
+                        BottomNavItem.WelcomeHome, 
+                        BottomNavItem.StudentDashboard,
+                        BottomNavItem.AddComplaint, 
+                        BottomNavItem.MyComplaints, 
+                        BottomNavItem.Profile
+                    )
                 }
 
                 NavigationBar(
@@ -93,10 +115,11 @@ fun HostelFixApp() {
                     items.forEach { item ->
                         NavigationBarItem(
                             icon = { Icon(item.icon, contentDescription = null) },
-                            label = { Text(stringResource(item.labelRes)) },
+                            label = { Text(if(item == BottomNavItem.WelcomeHome) "Home" else stringResource(item.labelRes)) },
                             selected = currentDestination?.hierarchy?.any { it.route == item.screen.route } == true,
                             onClick = {
                                 navController.navigate(item.screen.route) {
+                                    // Pop up to the start destination to avoid building up a large stack of destinations
                                     popUpTo(navController.graph.findStartDestination().id) {
                                         saveState = true
                                     }
