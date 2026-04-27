@@ -11,8 +11,8 @@
     <string name="submit_complaint">Submit Complaint</string>
     <string name="title">Title</string>
     <string name="description">Description</string>
-    <string name="my_complaints">My Complaints</string>
-    <string name="all_complaints">All Complaints</string>
+    <string name="my_complaints">Complaints</string>
+    <string name="all_complaints">Complaints</string>
     <string name="users">Users</string>
     <string name="dashboard">Dashboard</string>
     <string name="profile">Profile</string>
@@ -31,7 +31,7 @@
     <string name="user_management">User Management</string>
     <string name="invalid_credentials">Invalid email or password</string>
     <string name="back">Back</string>
-    <string name="welcome_headline">Your University Hostel Companion</string>
+    <string name="welcome_headline">Your Hostel Companion</string>
     <string name="welcome_description">Reporting and managing hostel issues made simple for Ndejje University students and staff.</string>
     <string name="get_started">Get Started</string>
     <string name="hostel_label">Hostel: %1$s</string>
