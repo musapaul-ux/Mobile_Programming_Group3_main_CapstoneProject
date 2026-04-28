@@ -86,21 +86,8 @@ fun HostelFixApp() {
                     HorizontalDivider()
                     NavigationDrawerItem(
                         label = { Text("Home") },
-                        selected = currentDestination?.route == Screen.Welcome.route,
-                        icon = { Icon(Icons.Default.Home, contentDescription = null) },
-                        onClick = {
-                            scope.launch { drawerState.close() }
-                            navController.navigate(Screen.Welcome.route) {
-                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        }
-                    )
-                    NavigationDrawerItem(
-                        label = { Text("Dashboard") },
                         selected = currentDestination?.route == Screen.AdminHome.route,
-                        icon = { Icon(Icons.Default.Dashboard, contentDescription = null) },
+                        icon = { Icon(Icons.Default.Home, contentDescription = null) },
                         onClick = {
                             scope.launch { drawerState.close() }
                             navController.navigate(Screen.AdminHome.route) {
