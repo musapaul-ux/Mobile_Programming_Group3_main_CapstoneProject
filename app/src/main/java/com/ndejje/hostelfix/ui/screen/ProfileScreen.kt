@@ -18,6 +18,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.*
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -38,12 +46,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.ndejje.hostelfix.R
 import com.ndejje.hostelfix.data.local.User
 import com.ndejje.hostelfix.data.repository.UserRepository
 import com.ndejje.hostelfix.ui.components.UserDialog
+import com.ndejje.hostelfix.viewmodel.AppViewModelProvider
+import com.ndejje.hostelfix.viewmodel.ThemeViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -62,6 +73,10 @@ fun ProfileScreen(
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val scrollState = rememberScrollState()
+    
+    // Theme ViewModel to handle dark mode toggle
+    val themeViewModel: ThemeViewModel = viewModel(factory = AppViewModelProvider.Factory)
+    val isDarkMode by themeViewModel.isDarkMode.collectAsState()
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -102,6 +117,10 @@ fun ProfileScreen(
                 .fillMaxSize()
                 .statusBarsPadding()
                 .verticalScroll(scrollState)
+                .padding(padding)
+                .padding(dimensionResource(R.dimen.padding_large))
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Header - "Profile" aligned to the top left next to Back button
             Row(
@@ -225,6 +244,44 @@ fun ProfileScreen(
                 )
 
                 Spacer(modifier = Modifier.height(40.dp))
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // Dark Mode Toggle Section
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                ),
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Row(
+                    modifier = Modifier
+                        .padding(dimensionResource(R.dimen.padding_medium))
+                        .fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = if (isDarkMode) Icons.Default.DarkMode else Icons.Default.LightMode,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Text(
+                            text = if (isDarkMode) "Dark Mode" else "Light Mode",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
+                    Switch(
+                        checked = isDarkMode,
+                        onCheckedChange = { themeViewModel.toggleDarkMode(it) }
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.height(32.dp))
 
                 // Footer Actions
                 Button(

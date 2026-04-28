@@ -37,7 +37,8 @@ private val LightColorScheme = lightColorScheme(
 @Composable
 fun HostelFixTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
+    // Dynamic color is available on Android 12+
+    dynamicColor: Boolean = false, // Set to false to prioritize app's branding colors
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -53,7 +54,7 @@ fun HostelFixTheme(
         SideEffect {
             val window = (view.context as Activity).window
             window.statusBarColor = colorScheme.primary.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = darkTheme
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
         }
     }
 

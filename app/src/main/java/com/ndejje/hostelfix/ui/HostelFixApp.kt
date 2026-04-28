@@ -3,10 +3,13 @@ package com.ndejje.hostelfix.ui
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -27,6 +30,7 @@ import com.ndejje.hostelfix.ui.screen.*
 import com.ndejje.hostelfix.viewmodel.AppViewModelProvider
 import com.ndejje.hostelfix.viewmodel.AuthViewModel
 import com.ndejje.hostelfix.viewmodel.ComplaintViewModel
+import com.ndejje.hostelfix.viewmodel.ThemeViewModel
 
 /**
  * Defines the items to be displayed in the Bottom Navigation Bar.
@@ -35,13 +39,13 @@ sealed class BottomNavItem(val screen: Screen, val labelRes: Int, val icon: Imag
     // Universal items
     object WelcomeHome : BottomNavItem(Screen.Welcome, R.string.app_name, Icons.Default.Home)
     
-    // Student items
+    // Student items - Using Dashboard icon for Student Home to differentiate from Welcome Home
     object StudentDashboard : BottomNavItem(Screen.StudentHome, R.string.welcome_title, Icons.Default.Dashboard)
     object AddComplaint : BottomNavItem(Screen.CreateComplaint, R.string.submit_complaint, Icons.Default.Add)
     object MyComplaints : BottomNavItem(Screen.MyComplaints, R.string.my_complaints, Icons.Default.List)
     object Profile : BottomNavItem(Screen.Profile, R.string.profile, Icons.Default.Person)
 
-    // Admin items
+    // Admin items - Using Dashboard icon for Admin Home
     object AdminDashboard : BottomNavItem(Screen.AdminHome, R.string.admin_dashboard, Icons.Default.Dashboard)
     object AdminComplaints : BottomNavItem(Screen.AdminComplaints, R.string.all_complaints, Icons.Default.List)
     object AdminUsers : BottomNavItem(Screen.AdminUsers, R.string.user_management, Icons.Default.Person)
@@ -53,7 +57,10 @@ fun HostelFixApp() {
     val navController = rememberNavController()
     val authViewModel: AuthViewModel = viewModel(factory = AppViewModelProvider.Factory)
     val complaintViewModel: ComplaintViewModel = viewModel(factory = AppViewModelProvider.Factory)
+    val themeViewModel: ThemeViewModel = viewModel(factory = AppViewModelProvider.Factory)
+    
     val currentUser by authViewModel.currentUser.collectAsState()
+    val isDarkMode by themeViewModel.isDarkMode.collectAsState()
     val context = LocalContext.current
     val app = context.applicationContext as HostelFixApplication
 
@@ -81,9 +88,19 @@ fun HostelFixApp() {
                             }
                         )
                     },
+                    actions = {
+                        IconButton(onClick = { themeViewModel.toggleDarkMode(!isDarkMode) }) {
+                            Icon(
+                                imageVector = if (isDarkMode) Icons.Default.LightMode else Icons.Default.DarkMode,
+                                contentDescription = "Toggle Theme",
+                                tint = MaterialTheme.colorScheme.onPrimary
+                            )
+                        }
+                    },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = MaterialTheme.colorScheme.primary,
-                        titleContentColor = MaterialTheme.colorScheme.onPrimary
+                        titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                        actionIconContentColor = MaterialTheme.colorScheme.onPrimary
                     )
                 )
             }
@@ -189,6 +206,7 @@ fun HostelFixApp() {
                     }
                 } else {
                     StudentHomeScreen(
+                        authViewModel = authViewModel,
                         onNavigateToCreateComplaint = { navController.navigate(Screen.CreateComplaint.route) },
                         onNavigateToMyComplaints = { navController.navigate(Screen.MyComplaints.route) },
                         onNavigateToProfile = { navController.navigate(Screen.Profile.route) }
