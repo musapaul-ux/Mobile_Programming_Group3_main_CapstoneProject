@@ -1,6 +1,7 @@
 package com.ndejje.hostelfix.navigation
 
 sealed class Screen(val route: String) {
+    object Splash : Screen("splash")
     object Welcome : Screen("welcome")
     object Login : Screen("login")
     object Register : Screen("register")
