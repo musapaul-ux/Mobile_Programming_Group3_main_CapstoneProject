@@ -2,14 +2,22 @@ package com.ndejje.hostelfix.ui.screen
 
 import android.content.Context
 import android.net.Uri
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.*
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -23,12 +31,21 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
@@ -44,11 +61,6 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 
-/**
- * Screen displaying the user's profile information.
- * Allows viewing and editing personal details and profile picture.
- */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
     user: User,
@@ -57,20 +69,20 @@ fun ProfileScreen(
     onNavigateBack: () -> Unit
 ) {
     var showEditDialog by remember { mutableStateOf(false) }
+    var showFullScreenImage by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+    val scrollState = rememberScrollState()
     
     // Theme ViewModel to handle dark mode toggle
     val themeViewModel: ThemeViewModel = viewModel(factory = AppViewModelProvider.Factory)
     val isDarkMode by themeViewModel.isDarkMode.collectAsState()
 
-    // Launcher for selecting an image from the gallery
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let { selectedUri ->
             scope.launch {
-                // Copy the image to internal storage for persistent access
                 val internalPath = saveImageToInternalStorage(context, selectedUri, user.id)
                 if (internalPath != null) {
                     userRepository.insertUser(
@@ -88,114 +100,150 @@ fun ProfileScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.profile)) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.back)
-                        )
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { showEditDialog = true }) {
-                        Icon(Icons.Default.Edit, contentDescription = "Edit Profile")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
-                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
+                        MaterialTheme.colorScheme.background
+                    )
                 )
             )
-        }
-    ) { padding ->
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .statusBarsPadding()
+                .verticalScroll(scrollState)
                 .padding(padding)
                 .padding(dimensionResource(R.dimen.padding_large))
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(dimensionResource(R.dimen.spacer_large)))
-
-            // Profile Picture Section
-            Box(
-                contentAlignment = Alignment.BottomEnd,
+            // Header - "Profile" aligned to the top left next to Back button
+            Row(
                 modifier = Modifier
-                    .size(150.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-                    .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape)
-                    .clickable { imagePickerLauncher.launch("image/*") }
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp, vertical = 4.dp), // Minimal padding for a tight UI
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                if (user.profilePictureUri != null) {
-                    AsyncImage(
-                        model = ImageRequest.Builder(context)
-                            .data(File(user.profilePictureUri)) // Load from internal file path
-                            .crossfade(true)
-                            .build(),
-                        contentDescription = "Profile Picture",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
-                    Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxSize(0.7f).align(Alignment.Center),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                IconButton(
+                    onClick = onNavigateBack,
+                ) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                 }
                 
-                Surface(
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape),
-                    tonalElevation = 4.dp
+                Text(
+                    text = "Profile",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f) // Fills available space, keeping text on left
+                )
+
+                IconButton(
+                    onClick = { showEditDialog = true },
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.CameraAlt,
-                        contentDescription = "Upload Picture",
-                        modifier = Modifier.padding(8.dp),
-                        tint = Color.White
-                    )
+                    Icon(Icons.Default.Edit, contentDescription = "Edit")
                 }
             }
 
-            Spacer(modifier = Modifier.height(dimensionResource(R.dimen.spacer_large)))
-
-            Text(
-                text = user.name, 
-                style = MaterialTheme.typography.displaySmall, 
-                color = MaterialTheme.colorScheme.primary
-            )
-            Text(
-                text = user.email, 
-                style = MaterialTheme.typography.headlineSmall, 
-                color = MaterialTheme.colorScheme.secondary
-            )
-            
-            Spacer(modifier = Modifier.height(dimensionResource(R.dimen.spacer_medium)))
-            
-            Surface(
-                color = MaterialTheme.colorScheme.primaryContainer,
-                shape = MaterialTheme.shapes.medium
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(
-                    text = stringResource(R.string.role) + ": " + user.role,
-                    modifier = Modifier.padding(horizontal = dimensionResource(R.dimen.padding_medium), vertical = dimensionResource(R.dimen.padding_small)),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            }
+                Spacer(modifier = Modifier.height(16.dp))
 
+                // Profile Image Section
+                Box(contentAlignment = Alignment.BottomEnd) {
+                    Surface(
+                        modifier = Modifier
+                            .size(140.dp)
+                            .padding(4.dp)
+                            .clickable(enabled = user.profilePictureUri != null) {
+                                showFullScreenImage = true
+                            },
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.surface,
+                        tonalElevation = 8.dp,
+                        shadowElevation = 8.dp
+                    ) {
+                        if (user.profilePictureUri != null) {
+                            AsyncImage(
+                                model = ImageRequest.Builder(context)
+                                    .data(File(user.profilePictureUri))
+                                    .crossfade(true)
+                                    .build(),
+                                contentDescription = null,
+                                modifier = Modifier.clip(CircleShape),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            Icon(
+                                Icons.Default.Person,
+                                contentDescription = null,
+                                modifier = Modifier.padding(32.dp),
+                                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+                            )
+                        }
+                    }
+                    
+                    SmallFloatingActionButton(
+                        onClick = { imagePickerLauncher.launch("image/*") },
+                        shape = CircleShape,
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Icon(Icons.Default.CameraAlt, contentDescription = "Change Picture", modifier = Modifier.size(20.dp))
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // User Identity
+                Text(
+                    text = user.name,
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                    modifier = Modifier.padding(top = 8.dp)
+                ) {
+                    Text(
+                        text = user.role.uppercase(),
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                // Information Grid
+                ProfileInfoCard(
+                    icon = Icons.Default.Email,
+                    label = "Email Address",
+                    value = user.email
+                )
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                ProfileInfoCard(
+                    icon = Icons.Default.VerifiedUser,
+                    label = "Account Status",
+                    value = "Verified"
+                )
+
+                Spacer(modifier = Modifier.height(40.dp))
             Spacer(modifier = Modifier.height(32.dp))
 
             // Dark Mode Toggle Section
@@ -235,13 +283,24 @@ fun ProfileScreen(
             Spacer(modifier = Modifier.weight(1f))
             Spacer(modifier = Modifier.height(32.dp))
 
-            Button(
-                onClick = onLogout,
-                modifier = Modifier.fillMaxWidth().height(dimensionResource(R.dimen.button_height)),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                shape = MaterialTheme.shapes.medium
-            ) {
-                Text(stringResource(R.string.logout), style = MaterialTheme.typography.titleMedium)
+                // Footer Actions
+                Button(
+                    onClick = onLogout,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                        contentColor = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                ) {
+                    Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Logout", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                }
+                
+                Spacer(modifier = Modifier.height(32.dp))
             }
         }
 
@@ -268,13 +327,119 @@ fun ProfileScreen(
                 }
             )
         }
+
+        if (showFullScreenImage && user.profilePictureUri != null) {
+            FullScreenImageDialog(
+                imagePath = user.profilePictureUri,
+                onDismiss = { showFullScreenImage = false }
+            )
+        }
     }
 }
 
-/**
- * Copies a selected image URI to the app's internal storage directory.
- * This ensures the image remains accessible even after the original URI permission expires.
- */
+@Composable
+fun FullScreenImageDialog(
+    imagePath: String,
+    onDismiss: () -> Unit
+) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            decorFitsSystemWindows = false
+        )
+    ) {
+        var scale by remember { mutableFloatStateOf(1f) }
+        var offset by remember { mutableStateOf(Offset.Zero) }
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black)
+        ) {
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(File(imagePath))
+                    .build(),
+                contentDescription = null,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .pointerInput(Unit) {
+                        detectTransformGestures { _, pan, zoom, _ ->
+                            scale = (scale * zoom).coerceIn(1f, 5f)
+                            offset += pan
+                        }
+                    }
+                    .graphicsLayer(
+                        scaleX = scale,
+                        scaleY = scale,
+                        translationX = offset.x,
+                        translationY = offset.y
+                    ),
+                contentScale = ContentScale.Fit
+            )
+
+            IconButton(
+                onClick = onDismiss,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(16.dp)
+                    .statusBarsPadding()
+            ) {
+                Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White)
+            }
+        }
+    }
+    BackHandler {
+        onDismiss()
+    }
+}
+
+@Composable
+fun ProfileInfoCard(icon: ImageVector, label: String, value: String) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 2.dp,
+        shadowElevation = 1.dp
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                modifier = Modifier.size(40.dp)
+            ) {
+                Icon(
+                    icon,
+                    contentDescription = null,
+                    modifier = Modifier.padding(8.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+            
+            Spacer(modifier = Modifier.width(16.dp))
+            
+            Column {
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                )
+                Text(
+                    text = value,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+        }
+    }
+}
+
 suspend fun saveImageToInternalStorage(context: Context, uri: Uri, userId: Int): String? = withContext(Dispatchers.IO) {
     try {
         val inputStream = context.contentResolver.openInputStream(uri)
