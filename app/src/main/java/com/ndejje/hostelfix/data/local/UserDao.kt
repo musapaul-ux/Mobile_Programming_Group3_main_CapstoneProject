@@ -23,6 +23,7 @@ interface UserDao {
     @Query("SELECT * FROM users WHERE email = :email LIMIT 1")
     suspend fun getUserByEmail(email: String): User?
 
+
     /**
      * Observes all users in the database.
      * Returns a Flow that emits updates whenever the table changes.
