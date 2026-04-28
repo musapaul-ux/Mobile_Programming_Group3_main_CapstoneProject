@@ -41,7 +41,6 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.ndejje.hostelfix.HostelFixApplication
 import com.ndejje.hostelfix.R
-import com.ndejje.hostelfix.data.local.User
 import com.ndejje.hostelfix.navigation.Screen
 import com.ndejje.hostelfix.ui.screen.*
 import com.ndejje.hostelfix.viewmodel.AppViewModelProvider
@@ -87,7 +86,7 @@ fun HostelFixApp() {
     val currentDestination = navBackStackEntry?.destination
 
     // Logic to show/hide Top and Bottom bars based on the current screen
-    val showBars = currentDestination?.route !in listOf(Screen.Splash.route, Screen.Welcome.route, Screen.Login.route, Screen.Register.route)
+    val showBars = currentDestination?.route !in listOf(Screen.Welcome.route, Screen.Login.route, Screen.Register.route)
     val isAdmin = currentUser?.role == "Admin"
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -313,18 +312,9 @@ fun HostelFixApp() {
         ) { innerPadding ->
             NavHost(
                 navController = navController,
-                startDestination = Screen.Splash.route,
+                startDestination = Screen.Welcome.route,
                 modifier = Modifier.padding(innerPadding)
             ) {
-                composable(Screen.Splash.route) {
-                    SplashScreen(
-                        onAnimationFinished = {
-                            navController.navigate(Screen.Welcome.route) {
-                                popUpTo(Screen.Splash.route) { inclusive = true }
-                            }
-                        }
-                    )
-                }
                 composable(Screen.Welcome.route) {
                     WelcomeScreen(
                         onGetStarted = {
