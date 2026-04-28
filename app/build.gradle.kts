@@ -44,6 +44,9 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation("androidx.navigation:navigation-compose:2.8.5")
 
+    // DataStore
+    implementation(libs.androidx.datastore.preferences)
+
     // Room
     val roomVersion = "2.7.0-alpha11"
     implementation("androidx.room:room-runtime:$roomVersion")
