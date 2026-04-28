@@ -56,6 +56,18 @@ class AuthViewModel(private val repository: UserRepository) : ViewModel() {
     }
 
     /**
+     * Updates the current user information in the state and database.
+     */
+    fun updateProfilePicture(uri: String) {
+        val user = _currentUser.value ?: return
+        viewModelScope.launch {
+            val updatedUser = user.copy(profilePictureUri = uri)
+            repository.insertUser(updatedUser)
+            _currentUser.value = updatedUser
+        }
+    }
+
+    /**
      * Clears user data and resets the app state upon logout.
      */
     fun logout() {

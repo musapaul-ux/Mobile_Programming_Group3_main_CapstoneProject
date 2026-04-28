@@ -1,8 +1,16 @@
 package com.ndejje.hostelfix.ui
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Home
@@ -12,11 +20,16 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -24,6 +37,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.ndejje.hostelfix.HostelFixApplication
 import com.ndejje.hostelfix.R
 import com.ndejje.hostelfix.navigation.Screen
@@ -33,6 +48,7 @@ import com.ndejje.hostelfix.viewmodel.AuthViewModel
 import com.ndejje.hostelfix.viewmodel.ComplaintViewModel
 import com.ndejje.hostelfix.viewmodel.ThemeViewModel
 import kotlinx.coroutines.launch
+import java.io.File
 
 /**
  * Defines the items to be displayed in the Bottom Navigation Bar.
@@ -76,14 +92,100 @@ fun HostelFixApp() {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
+    // Launcher for selecting an image from the gallery
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let { selectedUri ->
+            scope.launch {
+                currentUser?.let { user ->
+                    val internalPath = saveImageToInternalStorage(context, selectedUri, user.id)
+                    if (internalPath != null) {
+                        authViewModel.updateProfilePicture(internalPath)
+                    }
+                }
+            }
+        }
+    }
+
     ModalNavigationDrawer(
         drawerState = drawerState,
         gesturesEnabled = isAdmin && showBars,
         drawerContent = {
             if (isAdmin && showBars) {
                 ModalDrawerSheet {
-                    Text("Admin Menu", modifier = Modifier.padding(dimensionResource(R.dimen.padding_large)), style = MaterialTheme.typography.titleLarge)
-                    HorizontalDivider()
+                    // Admin Account Header
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.primaryContainer)
+                            .padding(dimensionResource(R.dimen.padding_large))
+                    ) {
+                        Column(horizontalAlignment = Alignment.Start) {
+                            Box(contentAlignment = Alignment.BottomEnd) {
+                                Surface(
+                                    modifier = Modifier
+                                        .size(80.dp)
+                                        .clip(CircleShape)
+                                        .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                                        .clickable { imagePickerLauncher.launch("image/*") },
+                                    color = MaterialTheme.colorScheme.surfaceVariant
+                                ) {
+                                    if (currentUser?.profilePictureUri != null) {
+                                        AsyncImage(
+                                            model = ImageRequest.Builder(context)
+                                                .data(File(currentUser?.profilePictureUri!!))
+                                                .crossfade(true)
+                                                .build(),
+                                            contentDescription = "Admin Profile Picture",
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                    } else {
+                                        Icon(
+                                            Icons.Default.Person,
+                                            contentDescription = null,
+                                            modifier = Modifier.padding(16.dp),
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                                Surface(
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .clip(CircleShape),
+                                    color = MaterialTheme.colorScheme.primary
+                                ) {
+                                    Icon(
+                                        Icons.Default.CameraAlt,
+                                        contentDescription = "Update Picture",
+                                        modifier = Modifier.padding(4.dp),
+                                        tint = Color.White
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(
+                                text = currentUser?.name ?: "Admin",
+                                style = MaterialTheme.typography.titleLarge,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                            Text(
+                                text = currentUser?.role ?: "Administrator",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        "Navigation", 
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp), 
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                    
                     NavigationDrawerItem(
                         label = { Text("Home") },
                         selected = currentDestination?.route == Screen.AdminHome.route,
@@ -139,7 +241,7 @@ fun HostelFixApp() {
                             Text(
                                 text = when (currentDestination?.route) {
                                     Screen.StudentHome.route -> stringResource(R.string.welcome_title)
-                                    Screen.AdminHome.route -> "" // Removed "Admin Dashboard" title as requested
+                                    Screen.AdminHome.route -> ""
                                     Screen.CreateComplaint.route -> stringResource(R.string.submit_complaint)
                                     Screen.MyComplaints.route -> stringResource(R.string.my_complaints)
                                     Screen.AdminComplaints.route -> stringResource(R.string.all_complaints)
