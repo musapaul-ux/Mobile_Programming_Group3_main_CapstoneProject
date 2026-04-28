@@ -23,6 +23,7 @@
     <string name="dont_have_account">Don\'t have an account? Register</string>
     <string name="already_have_account">Already have an account? Login</string>
     <string name="welcome_title">Welcome to Hostel Fix</string>
+    <string name="personalized_welcome">Welcome, %1$s!</string>
     <string name="no_complaints">No complaints submitted yet.</string>
     <string name="status_label">Status: %1$s</string>
     <string name="user_id_label">User ID: %1$d</string>
