@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -102,17 +103,15 @@ fun ProfileScreen(
                 .statusBarsPadding()
                 .verticalScroll(scrollState)
         ) {
-            // Modern Header
+            // Header - "Profile" aligned to the top left next to Back button
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                    .padding(horizontal = 4.dp, vertical = 4.dp), // Minimal padding for a tight UI
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(
                     onClick = onNavigateBack,
-                    modifier = Modifier.background(Color.White.copy(alpha = 0.5f), CircleShape)
                 ) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                 }
@@ -120,12 +119,12 @@ fun ProfileScreen(
                 Text(
                     text = "Profile",
                     style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f) // Fills available space, keeping text on left
                 )
 
                 IconButton(
                     onClick = { showEditDialog = true },
-                    modifier = Modifier.background(Color.White.copy(alpha = 0.5f), CircleShape)
                 ) {
                     Icon(Icons.Default.Edit, contentDescription = "Edit")
                 }
@@ -137,9 +136,9 @@ fun ProfileScreen(
                     .padding(horizontal = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-                // Profile Image with Ring
+                // Profile Image Section
                 Box(contentAlignment = Alignment.BottomEnd) {
                     Surface(
                         modifier = Modifier
@@ -186,7 +185,7 @@ fun ProfileScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Name and Role
+                // User Identity
                 Text(
                     text = user.name,
                     style = MaterialTheme.typography.headlineMedium,
@@ -210,7 +209,7 @@ fun ProfileScreen(
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // Info Cards
+                // Information Grid
                 ProfileInfoCard(
                     icon = Icons.Default.Email,
                     label = "Email Address",
@@ -227,7 +226,7 @@ fun ProfileScreen(
 
                 Spacer(modifier = Modifier.height(40.dp))
 
-                // Action Buttons
+                // Footer Actions
                 Button(
                     onClick = onLogout,
                     modifier = Modifier
@@ -239,7 +238,7 @@ fun ProfileScreen(
                         contentColor = MaterialTheme.colorScheme.onErrorContainer
                     )
                 ) {
-                    Icon(Icons.Default.Logout, contentDescription = null)
+                    Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null)
                     Spacer(Modifier.width(8.dp))
                     Text("Logout", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 }
@@ -311,7 +310,6 @@ fun FullScreenImageDialog(
                     .pointerInput(Unit) {
                         detectTransformGestures { _, pan, zoom, _ ->
                             scale = (scale * zoom).coerceIn(1f, 5f)
-                            // Basic offset clamping can be added here if needed
                             offset += pan
                         }
                     }
