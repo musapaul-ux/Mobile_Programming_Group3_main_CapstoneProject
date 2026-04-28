@@ -2,11 +2,13 @@ package com.ndejje.hostelfix.ui.screen
 
 import android.content.Context
 import android.net.Uri
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -20,9 +22,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
@@ -30,6 +35,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.ndejje.hostelfix.R
@@ -50,6 +57,7 @@ fun ProfileScreen(
     onNavigateBack: () -> Unit
 ) {
     var showEditDialog by remember { mutableStateOf(false) }
+    var showFullScreenImage by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val scrollState = rememberScrollState()
@@ -136,7 +144,10 @@ fun ProfileScreen(
                     Surface(
                         modifier = Modifier
                             .size(140.dp)
-                            .padding(4.dp),
+                            .padding(4.dp)
+                            .clickable(enabled = user.profilePictureUri != null) {
+                                showFullScreenImage = true
+                            },
                         shape = CircleShape,
                         color = MaterialTheme.colorScheme.surface,
                         tonalElevation = 8.dp,
@@ -260,6 +271,72 @@ fun ProfileScreen(
                 }
             )
         }
+
+        if (showFullScreenImage && user.profilePictureUri != null) {
+            FullScreenImageDialog(
+                imagePath = user.profilePictureUri,
+                onDismiss = { showFullScreenImage = false }
+            )
+        }
+    }
+}
+
+@Composable
+fun FullScreenImageDialog(
+    imagePath: String,
+    onDismiss: () -> Unit
+) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            decorFitsSystemWindows = false
+        )
+    ) {
+        var scale by remember { mutableFloatStateOf(1f) }
+        var offset by remember { mutableStateOf(Offset.Zero) }
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black)
+        ) {
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(File(imagePath))
+                    .build(),
+                contentDescription = null,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .pointerInput(Unit) {
+                        detectTransformGestures { _, pan, zoom, _ ->
+                            scale = (scale * zoom).coerceIn(1f, 5f)
+                            // Basic offset clamping can be added here if needed
+                            offset += pan
+                        }
+                    }
+                    .graphicsLayer(
+                        scaleX = scale,
+                        scaleY = scale,
+                        translationX = offset.x,
+                        translationY = offset.y
+                    ),
+                contentScale = ContentScale.Fit
+            )
+
+            IconButton(
+                onClick = onDismiss,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(16.dp)
+                    .statusBarsPadding()
+            ) {
+                Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White)
+            }
+        }
+    }
+    BackHandler {
+        onDismiss()
     }
 }
 
