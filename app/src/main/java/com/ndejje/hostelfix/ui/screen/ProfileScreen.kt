@@ -17,15 +17,14 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material.icons.filled.*
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -42,7 +41,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -100,239 +98,241 @@ fun ProfileScreen(
         }
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
-                        MaterialTheme.colorScheme.background
-                    )
-                )
-            )
-    ) {
-        Column(
+    Scaffold { padding ->
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .statusBarsPadding()
-                .verticalScroll(scrollState)
                 .padding(padding)
-                .padding(dimensionResource(R.dimen.padding_large))
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            // Header - "Profile" aligned to the top left next to Back button
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 4.dp, vertical = 4.dp), // Minimal padding for a tight UI
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(
-                    onClick = onNavigateBack,
-                ) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                }
-                
-                Text(
-                    text = "Profile",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.weight(1f) // Fills available space, keeping text on left
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
+                            MaterialTheme.colorScheme.background
+                        )
+                    )
                 )
-
-                IconButton(
-                    onClick = { showEditDialog = true },
-                ) {
-                    Icon(Icons.Default.Edit, contentDescription = "Edit")
-                }
-            }
-
+        ) {
             Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp),
+                    .fillMaxSize()
+                    .statusBarsPadding()
+                    .verticalScroll(scrollState),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Profile Image Section
-                Box(contentAlignment = Alignment.BottomEnd) {
-                    Surface(
-                        modifier = Modifier
-                            .size(140.dp)
-                            .padding(4.dp)
-                            .clickable(enabled = user.profilePictureUri != null) {
-                                showFullScreenImage = true
-                            },
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.surface,
-                        tonalElevation = 8.dp,
-                        shadowElevation = 8.dp
+                // Header - "Profile" aligned to the top left next to Back button
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        onClick = onNavigateBack,
+                        modifier = Modifier.background(Color.White.copy(alpha = 0.5f), CircleShape)
                     ) {
-                        if (user.profilePictureUri != null) {
-                            AsyncImage(
-                                model = ImageRequest.Builder(context)
-                                    .data(File(user.profilePictureUri))
-                                    .crossfade(true)
-                                    .build(),
-                                contentDescription = null,
-                                modifier = Modifier.clip(CircleShape),
-                                contentScale = ContentScale.Crop
-                            )
-                        } else {
-                            Icon(
-                                Icons.Default.Person,
-                                contentDescription = null,
-                                modifier = Modifier.padding(32.dp),
-                                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                    
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Text(
+                        text = "Profile",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    IconButton(
+                        onClick = { showEditDialog = true },
+                        modifier = Modifier.background(Color.White.copy(alpha = 0.5f), CircleShape)
+                    ) {
+                        Icon(Icons.Default.Edit, contentDescription = "Edit")
+                    }
+                }
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    // Profile Image Section
+                    Box(contentAlignment = Alignment.BottomEnd) {
+                        Surface(
+                            modifier = Modifier
+                                .size(140.dp)
+                                .padding(4.dp)
+                                .clickable(enabled = user.profilePictureUri != null) {
+                                    showFullScreenImage = true
+                                },
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.surface,
+                            tonalElevation = 8.dp,
+                            shadowElevation = 8.dp
+                        ) {
+                            if (user.profilePictureUri != null) {
+                                AsyncImage(
+                                    model = ImageRequest.Builder(context)
+                                        .data(File(user.profilePictureUri))
+                                        .crossfade(true)
+                                        .build(),
+                                    contentDescription = null,
+                                    modifier = Modifier.clip(CircleShape),
+                                    contentScale = ContentScale.Crop
+                                )
+                            } else {
+                                Icon(
+                                    Icons.Default.Person,
+                                    contentDescription = null,
+                                    modifier = Modifier.padding(32.dp),
+                                    tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+                                )
+                            }
+                        }
+                        
+                        SmallFloatingActionButton(
+                            onClick = { imagePickerLauncher.launch("image/*") },
+                            shape = CircleShape,
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.size(40.dp)
+                        ) {
+                            Icon(Icons.Default.CameraAlt, contentDescription = "Change Picture", modifier = Modifier.size(20.dp))
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // User Identity
+                    Text(
+                        text = user.name,
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                        modifier = Modifier.padding(top = 8.dp)
+                    ) {
+                        Text(
+                            text = user.role.uppercase(),
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    // Information Grid
+                    ProfileInfoCard(
+                        icon = Icons.Default.Email,
+                        label = "Email Address",
+                        value = user.email
+                    )
+                    
+                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    ProfileInfoCard(
+                        icon = Icons.Default.VerifiedUser,
+                        label = "Account Status",
+                        value = "Verified"
+                    )
+
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    // Dark Mode Toggle Section
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                        ),
+                        shape = MaterialTheme.shapes.medium
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .padding(dimensionResource(R.dimen.padding_medium))
+                                .fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = if (isDarkMode) Icons.Default.DarkMode else Icons.Default.LightMode,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.width(16.dp))
+                                Text(
+                                    text = if (isDarkMode) "Dark Mode" else "Light Mode",
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                            }
+                            Switch(
+                                checked = isDarkMode,
+                                onCheckedChange = { themeViewModel.toggleDarkMode(it) }
                             )
                         }
                     }
-                    
-                    SmallFloatingActionButton(
-                        onClick = { imagePickerLauncher.launch("image/*") },
-                        shape = CircleShape,
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.size(40.dp)
+
+                    Spacer(modifier = Modifier.height(40.dp))
+
+                    // Footer Actions
+                    Button(
+                        onClick = onLogout,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                            contentColor = MaterialTheme.colorScheme.onErrorContainer
+                        )
                     ) {
-                        Icon(Icons.Default.CameraAlt, contentDescription = "Change Picture", modifier = Modifier.size(20.dp))
+                        Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Logout", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     }
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // User Identity
-                Text(
-                    text = user.name,
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                
-                Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                    modifier = Modifier.padding(top = 8.dp)
-                ) {
-                    Text(
-                        text = user.role.uppercase(),
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(32.dp))
-
-                // Information Grid
-                ProfileInfoCard(
-                    icon = Icons.Default.Email,
-                    label = "Email Address",
-                    value = user.email
-                )
-                
-                Spacer(modifier = Modifier.height(12.dp))
-                
-                ProfileInfoCard(
-                    icon = Icons.Default.VerifiedUser,
-                    label = "Account Status",
-                    value = "Verified"
-                )
-
-                Spacer(modifier = Modifier.height(40.dp))
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // Dark Mode Toggle Section
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                ),
-                shape = MaterialTheme.shapes.medium
-            ) {
-                Row(
-                    modifier = Modifier
-                        .padding(dimensionResource(R.dimen.padding_medium))
-                        .fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = if (isDarkMode) Icons.Default.DarkMode else Icons.Default.LightMode,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Text(
-                            text = if (isDarkMode) "Dark Mode" else "Light Mode",
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-                    }
-                    Switch(
-                        checked = isDarkMode,
-                        onCheckedChange = { themeViewModel.toggleDarkMode(it) }
-                    )
+                    
+                    Spacer(modifier = Modifier.height(32.dp))
                 }
             }
 
-            Spacer(modifier = Modifier.weight(1f))
-            Spacer(modifier = Modifier.height(32.dp))
-
-                // Footer Actions
-                Button(
-                    onClick = onLogout,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer,
-                        contentColor = MaterialTheme.colorScheme.onErrorContainer
-                    )
-                ) {
-                    Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null)
-                    Spacer(Modifier.width(8.dp))
-                    Text("Logout", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                }
-                
-                Spacer(modifier = Modifier.height(32.dp))
-            }
-        }
-
-        if (showEditDialog) {
-            UserDialog(
-                dialogTitle = "Edit Profile",
-                initialUser = user,
-                showRoleSelection = false,
-                onDismiss = { showEditDialog = false },
-                onConfirm = { name, email, password, _ ->
-                    scope.launch {
-                        userRepository.insertUser(
-                            User(
-                                id = user.id,
-                                name = name,
-                                email = email,
-                                password = password,
-                                role = user.role,
-                                profilePictureUri = user.profilePictureUri
+            if (showEditDialog) {
+                UserDialog(
+                    dialogTitle = "Edit Profile",
+                    initialUser = user,
+                    showRoleSelection = false,
+                    onDismiss = { showEditDialog = false },
+                    onConfirm = { name, email, password, _ ->
+                        scope.launch {
+                            userRepository.insertUser(
+                                User(
+                                    id = user.id,
+                                    name = name,
+                                    email = email,
+                                    password = password,
+                                    role = user.role,
+                                    profilePictureUri = user.profilePictureUri
+                                )
                             )
-                        )
-                        showEditDialog = false
+                            showEditDialog = false
+                        }
                     }
-                }
-            )
-        }
+                )
+            }
 
-        if (showFullScreenImage && user.profilePictureUri != null) {
-            FullScreenImageDialog(
-                imagePath = user.profilePictureUri,
-                onDismiss = { showFullScreenImage = false }
-            )
+            if (showFullScreenImage && user.profilePictureUri != null) {
+                FullScreenImageDialog(
+                    imagePath = user.profilePictureUri,
+                    onDismiss = { showFullScreenImage = false }
+                )
+            }
         }
     }
 }
