@@ -16,6 +16,9 @@ object AppViewModelProvider {
         initializer {
             ComplaintViewModel(hostelFixApplication().complaintRepository)
         }
+        initializer {
+            ThemeViewModel(hostelFixApplication().userPreferencesRepository)
+        }
     }
 }
 

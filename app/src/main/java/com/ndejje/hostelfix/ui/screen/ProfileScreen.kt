@@ -8,11 +8,15 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -25,12 +29,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.ndejje.hostelfix.R
 import com.ndejje.hostelfix.data.local.User
 import com.ndejje.hostelfix.data.repository.UserRepository
 import com.ndejje.hostelfix.ui.components.UserDialog
+import com.ndejje.hostelfix.viewmodel.AppViewModelProvider
+import com.ndejje.hostelfix.viewmodel.ThemeViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -52,6 +59,10 @@ fun ProfileScreen(
     var showEditDialog by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+    
+    // Theme ViewModel to handle dark mode toggle
+    val themeViewModel: ThemeViewModel = viewModel(factory = AppViewModelProvider.Factory)
+    val isDarkMode by themeViewModel.isDarkMode.collectAsState()
 
     // Launcher for selecting an image from the gallery
     val imagePickerLauncher = rememberLauncherForActivityResult(
@@ -107,7 +118,8 @@ fun ProfileScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(dimensionResource(R.dimen.padding_large)),
+                .padding(dimensionResource(R.dimen.padding_large))
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.height(dimensionResource(R.dimen.spacer_large)))
@@ -184,7 +196,44 @@ fun ProfileScreen(
                 )
             }
 
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // Dark Mode Toggle Section
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                ),
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Row(
+                    modifier = Modifier
+                        .padding(dimensionResource(R.dimen.padding_medium))
+                        .fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = if (isDarkMode) Icons.Default.DarkMode else Icons.Default.LightMode,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Text(
+                            text = if (isDarkMode) "Dark Mode" else "Light Mode",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
+                    Switch(
+                        checked = isDarkMode,
+                        onCheckedChange = { themeViewModel.toggleDarkMode(it) }
+                    )
+                }
+            }
+
             Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.height(32.dp))
 
             Button(
                 onClick = onLogout,
