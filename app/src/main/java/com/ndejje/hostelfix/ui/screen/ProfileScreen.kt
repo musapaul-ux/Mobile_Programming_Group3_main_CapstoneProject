@@ -26,6 +26,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
@@ -39,6 +40,11 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 
+/**
+ * Screen displaying the user's profile information.
+ * All details are centered under the profile picture for a balanced look.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
     user: User,
@@ -82,13 +88,14 @@ fun ProfileScreen(
                 .fillMaxSize()
                 .statusBarsPadding()
                 .padding(horizontal = dimensionResource(R.dimen.padding_large))
-                .verticalScroll(scrollState)
+                .verticalScroll(scrollState),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Top Navigation & Title - Starts from Top Left
+            // Top Navigation Row
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 8.dp),
+                    .padding(top = 8.dp, bottom = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = onNavigateBack, modifier = Modifier.size(32.dp)) {
@@ -114,89 +121,90 @@ fun ProfileScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            // Profile Picture - Balanced in the Center
+            // Profile Picture - Centered
             Box(
-                modifier = Modifier.fillMaxWidth(),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.BottomEnd,
+                modifier = Modifier
+                    .size(130.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                    .clickable { imagePickerLauncher.launch("image/*") }
             ) {
-                Box(
-                    contentAlignment = Alignment.BottomEnd,
+                if (user.profilePictureUri != null) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(context)
+                            .data(File(user.profilePictureUri))
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = "Profile Picture",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(0.7f).align(Alignment.Center),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                
+                Surface(
+                    color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier
-                        .size(130.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                        .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape)
-                        .clickable { imagePickerLauncher.launch("image/*") }
+                        .size(34.dp)
+                        .clip(CircleShape),
+                    tonalElevation = 4.dp
                 ) {
-                    if (user.profilePictureUri != null) {
-                        AsyncImage(
-                            model = ImageRequest.Builder(context)
-                                .data(File(user.profilePictureUri))
-                                .crossfade(true)
-                                .build(),
-                            contentDescription = "Profile Picture",
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
-                    } else {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = null,
-                            modifier = Modifier.fillMaxSize(0.7f).align(Alignment.Center),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    
-                    Surface(
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier
-                            .size(34.dp)
-                            .clip(CircleShape),
-                        tonalElevation = 4.dp
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.CameraAlt,
-                            contentDescription = "Upload Picture",
-                            modifier = Modifier.padding(7.dp),
-                            tint = Color.White
-                        )
-                    }
+                    Icon(
+                        imageVector = Icons.Default.CameraAlt,
+                        contentDescription = "Upload Picture",
+                        modifier = Modifier.padding(7.dp),
+                        tint = Color.White
+                    )
                 }
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            // User Info - Starts from the Left
+            // User Info - Strictly Centered
             Text(
                 text = user.name, 
                 style = MaterialTheme.typography.headlineMedium, 
-                color = MaterialTheme.colorScheme.onBackground
+                color = MaterialTheme.colorScheme.onBackground,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
             )
             Text(
                 text = user.email, 
                 style = MaterialTheme.typography.titleLarge, 
-                color = MaterialTheme.colorScheme.secondary
+                color = MaterialTheme.colorScheme.secondary,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
             )
             
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             
             Surface(
                 color = MaterialTheme.colorScheme.primaryContainer,
-                shape = MaterialTheme.shapes.medium
+                shape = MaterialTheme.shapes.medium,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
             ) {
                 Text(
                     text = stringResource(R.string.role) + ": " + user.role,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
                     style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    textAlign = TextAlign.Center
                 )
             }
 
             Spacer(modifier = Modifier.weight(1f).heightIn(min = 40.dp))
 
-            // Balanced Logout Button at the bottom
+            // Balanced Logout Button
             Button(
                 onClick = onLogout,
                 modifier = Modifier
