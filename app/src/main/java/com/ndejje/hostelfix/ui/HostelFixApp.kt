@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Home
@@ -19,6 +18,7 @@ import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -47,7 +47,6 @@ import com.ndejje.hostelfix.ui.screen.*
 import com.ndejje.hostelfix.viewmodel.AppViewModelProvider
 import com.ndejje.hostelfix.viewmodel.AuthViewModel
 import com.ndejje.hostelfix.viewmodel.ComplaintViewModel
-import com.ndejje.hostelfix.viewmodel.ThemeViewModel
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -58,14 +57,14 @@ sealed class BottomNavItem(val screen: Screen, val labelRes: Int, val icon: Imag
     // Universal items
     object WelcomeHome : BottomNavItem(Screen.Welcome, R.string.app_name, Icons.Default.Home)
     
-    // Student items - Using Dashboard icon for Student Home to differentiate from Welcome Home
+    // Student items
     object StudentDashboard : BottomNavItem(Screen.StudentHome, R.string.welcome_title, Icons.Default.Dashboard)
     object AddComplaint : BottomNavItem(Screen.CreateComplaint, R.string.submit_complaint, Icons.Default.Add)
     object MyComplaints : BottomNavItem(Screen.MyComplaints, R.string.my_complaints, Icons.Default.List)
     object Profile : BottomNavItem(Screen.Profile, R.string.profile, Icons.Default.Person)
 
-    // Admin items - Using Dashboard icon for Admin Home
-    object AdminDashboard : BottomNavItem(Screen.AdminHome, R.string.admin_dashboard, Icons.Default.Dashboard)
+    // Admin items
+    object AdminDashboard : BottomNavItem(Screen.AdminHome, R.string.admin_dashboard, Icons.Default.Home)
     object AdminComplaints : BottomNavItem(Screen.AdminComplaints, R.string.all_complaints, Icons.Default.List)
     object AdminUsers : BottomNavItem(Screen.AdminUsers, R.string.user_management, Icons.Default.Person)
 }
@@ -76,10 +75,8 @@ fun HostelFixApp() {
     val navController = rememberNavController()
     val authViewModel: AuthViewModel = viewModel(factory = AppViewModelProvider.Factory)
     val complaintViewModel: ComplaintViewModel = viewModel(factory = AppViewModelProvider.Factory)
-    val themeViewModel: ThemeViewModel = viewModel(factory = AppViewModelProvider.Factory)
     
     val currentUser by authViewModel.currentUser.collectAsState()
-    val isDarkMode by themeViewModel.isDarkMode.collectAsState()
     val context = LocalContext.current
     val app = context.applicationContext as HostelFixApplication
 
@@ -92,22 +89,6 @@ fun HostelFixApp() {
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-
-    // Launcher for selecting an image from the gallery
-    val imagePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        uri?.let { selectedUri ->
-            scope.launch {
-                currentUser?.let { user ->
-                    val internalPath = saveImageToInternalStorage(context, selectedUri, user.id)
-                    if (internalPath != null) {
-                        authViewModel.updateProfilePicture(internalPath)
-                    }
-                }
-            }
-        }
-    }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -128,8 +109,7 @@ fun HostelFixApp() {
                                     modifier = Modifier
                                         .size(80.dp)
                                         .clip(CircleShape)
-                                        .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape)
-                                        .clickable { imagePickerLauncher.launch("image/*") },
+                                        .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape),
                                     color = MaterialTheme.colorScheme.surfaceVariant
                                 ) {
                                     if (currentUser?.profilePictureUri != null) {
@@ -150,19 +130,6 @@ fun HostelFixApp() {
                                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
-                                }
-                                Surface(
-                                    modifier = Modifier
-                                        .size(24.dp)
-                                        .clip(CircleShape),
-                                    color = MaterialTheme.colorScheme.primary
-                                ) {
-                                    Icon(
-                                        Icons.Default.CameraAlt,
-                                        contentDescription = "Update Picture",
-                                        modifier = Modifier.padding(4.dp),
-                                        tint = Color.White
-                                    )
                                 }
                             }
                             Spacer(modifier = Modifier.height(12.dp))
@@ -242,7 +209,7 @@ fun HostelFixApp() {
                             Text(
                                 text = when (currentDestination?.route) {
                                     Screen.StudentHome.route -> stringResource(R.string.welcome_title)
-                                    Screen.AdminHome.route -> ""
+                                    Screen.AdminHome.route -> stringResource(R.string.admin_dashboard)
                                     Screen.CreateComplaint.route -> stringResource(R.string.submit_complaint)
                                     Screen.MyComplaints.route -> stringResource(R.string.my_complaints)
                                     Screen.AdminComplaints.route -> stringResource(R.string.all_complaints)
@@ -259,19 +226,9 @@ fun HostelFixApp() {
                                 }
                             }
                         },
-                        actions = {
-                            IconButton(onClick = { themeViewModel.toggleDarkMode(!isDarkMode) }) {
-                                Icon(
-                                    imageVector = if (isDarkMode) Icons.Default.LightMode else Icons.Default.DarkMode,
-                                    contentDescription = "Toggle Theme",
-                                    tint = MaterialTheme.colorScheme.onPrimary
-                                )
-                            }
-                        },
                         colors = TopAppBarDefaults.topAppBarColors(
                             containerColor = MaterialTheme.colorScheme.primary,
                             titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                            actionIconContentColor = MaterialTheme.colorScheme.onPrimary,
                             navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
                         )
                     )
@@ -356,13 +313,6 @@ fun HostelFixApp() {
                             authViewModel.logout()
                             navController.popBackStack()
                         }
-                    }
-                } else {
-                    StudentHomeScreen(
-                        authViewModel = authViewModel,
-                        onNavigateToCreateComplaint = { navController.navigate(Screen.CreateComplaint.route) },
-                        onNavigateToMyComplaints = { navController.navigate(Screen.MyComplaints.route) },
-                        onNavigateToProfile = { navController.navigate(Screen.Profile.route) }
                     )
                 }
                 composable(Screen.StudentHome.route) {
@@ -374,6 +324,7 @@ fun HostelFixApp() {
                         }
                     } else {
                         StudentHomeScreen(
+                            authViewModel = authViewModel,
                             onNavigateToCreateComplaint = { navController.navigate(Screen.CreateComplaint.route) },
                             onNavigateToMyComplaints = { navController.navigate(Screen.MyComplaints.route) },
                             onNavigateToProfile = { navController.navigate(Screen.Profile.route) }
