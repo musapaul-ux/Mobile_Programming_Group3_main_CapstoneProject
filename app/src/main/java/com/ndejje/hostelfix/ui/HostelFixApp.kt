@@ -309,11 +309,11 @@ fun HostelFixApp() {
                     }
                 }
             }
-        ) { innerPadding ->
+        ) { scaffoldPadding ->
             NavHost(
                 navController = navController,
                 startDestination = Screen.Welcome.route,
-                modifier = Modifier.padding(innerPadding)
+                modifier = Modifier.padding(scaffoldPadding)
             ) {
                 composable(Screen.Welcome.route) {
                     WelcomeScreen(
