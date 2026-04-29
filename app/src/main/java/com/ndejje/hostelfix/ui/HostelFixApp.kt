@@ -221,6 +221,7 @@ fun HostelFixApp() {
                         CreateComplaintScreen(
                             userId = user.id,
                             viewModel = complaintViewModel,
+                            onNavigateBack = { navController.popBackStack() },
                             onComplaintSubmitted = { navController.popBackStack() }
                         )
                     }
