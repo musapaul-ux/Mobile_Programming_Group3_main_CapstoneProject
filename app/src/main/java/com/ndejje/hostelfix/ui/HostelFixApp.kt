@@ -189,6 +189,7 @@ fun HostelFixApp() {
                     }
                 } else {
                     StudentHomeScreen(
+                        userName = currentUser?.name ?: "User",
                         onNavigateToCreateComplaint = { navController.navigate(Screen.CreateComplaint.route) },
                         onNavigateToMyComplaints = { navController.navigate(Screen.MyComplaints.route) },
                         onNavigateToProfile = { navController.navigate(Screen.Profile.route) }
@@ -204,6 +205,7 @@ fun HostelFixApp() {
                     }
                 } else {
                     AdminHomeScreen(
+                        userName = currentUser?.name ?: "Admin",
                         onNavigateToComplaints = { navController.navigate(Screen.AdminComplaints.route) },
                         onNavigateToUsers = { navController.navigate(Screen.AdminUsers.route) },
                         onLogout = {
