@@ -48,12 +48,12 @@ fun AdminComplaintsScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .statusBarsPadding()
         ) {
-            // Header - Consistent with Profile Screen
+            // Header - Fixed at top for stability
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .statusBarsPadding()
                     .padding(horizontal = 4.dp, vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -83,10 +83,11 @@ fun AdminComplaintsScreen(
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
+                    contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    items(complaints) { complaint ->
+                    // Added unique key to prevent list jumping during status updates
+                    items(complaints, key = { it.id }) { complaint ->
                         AdminComplaintItem(complaint) { newStatus ->
                             viewModel.updateStatus(complaint.id, newStatus)
                         }

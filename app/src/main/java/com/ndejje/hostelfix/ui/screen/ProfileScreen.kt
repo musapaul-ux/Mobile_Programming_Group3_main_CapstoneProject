@@ -68,6 +68,14 @@ fun ProfileScreen(
     val context = LocalContext.current
     val scrollState = rememberScrollState()
 
+    // Remember the image request to prevent unnecessary reloads
+    val imageRequest = remember(user.profilePictureUri) {
+        ImageRequest.Builder(context)
+            .data(user.profilePictureUri?.let { File(it) })
+            .crossfade(true)
+            .build()
+    }
+
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
@@ -76,14 +84,7 @@ fun ProfileScreen(
                 val internalPath = saveImageToInternalStorage(context, selectedUri, user.id)
                 if (internalPath != null) {
                     userRepository.insertUser(
-                        User(
-                            id = user.id,
-                            name = user.name,
-                            email = user.email,
-                            password = user.password,
-                            role = user.role,
-                            profilePictureUri = internalPath
-                        )
+                        user.copy(profilePictureUri = internalPath)
                     )
                 }
             }
@@ -102,50 +103,43 @@ fun ProfileScreen(
                 )
             )
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .statusBarsPadding()
-                .verticalScroll(scrollState)
-        ) {
-            // Modern Header
+        Column(modifier = Modifier.fillMaxSize()) {
+            // Stable Header: Fixed at the top
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                    .statusBarsPadding()
+                    .padding(horizontal = 8.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(
-                    onClick = onNavigateBack,
-                    modifier = Modifier.background(Color.White.copy(alpha = 0.5f), CircleShape)
-                ) {
+                IconButton(onClick = onNavigateBack) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                 }
                 
                 Text(
                     text = "Profile",
                     style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f)
                 )
 
-                IconButton(
-                    onClick = { showEditDialog = true },
-                    modifier = Modifier.background(Color.White.copy(alpha = 0.5f), CircleShape)
-                ) {
+                IconButton(onClick = { showEditDialog = true }) {
                     Icon(Icons.Default.Edit, contentDescription = "Edit")
                 }
             }
 
+            // Scrollable Content area
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .weight(1f)
+                    .verticalScroll(scrollState)
                     .padding(horizontal = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // Profile Image with Ring
+                // Profile Image with Ring - Fixed size to prevent shifting
                 Box(contentAlignment = Alignment.BottomEnd) {
                     Surface(
                         modifier = Modifier
@@ -161,10 +155,7 @@ fun ProfileScreen(
                     ) {
                         if (user.profilePictureUri != null) {
                             AsyncImage(
-                                model = ImageRequest.Builder(context)
-                                    .data(File(user.profilePictureUri))
-                                    .crossfade(true)
-                                    .build(),
+                                model = imageRequest,
                                 contentDescription = null,
                                 modifier = Modifier.clip(CircleShape),
                                 contentScale = ContentScale.Crop
@@ -197,7 +188,8 @@ fun ProfileScreen(
                     text = user.name,
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.ExtraBold,
-                    color = MaterialTheme.colorScheme.onBackground
+                    color = MaterialTheme.colorScheme.onBackground,
+                    textAlign = TextAlign.Center
                 )
                 
                 Surface(
@@ -263,14 +255,7 @@ fun ProfileScreen(
                 onConfirm = { name, email, password, _ ->
                     scope.launch {
                         userRepository.insertUser(
-                            User(
-                                id = user.id,
-                                name = name,
-                                email = email,
-                                password = password,
-                                role = user.role,
-                                profilePictureUri = user.profilePictureUri
-                            )
+                            user.copy(name = name, email = email, password = password)
                         )
                         showEditDialog = false
                     }
@@ -317,7 +302,6 @@ fun FullScreenImageDialog(
                     .pointerInput(Unit) {
                         detectTransformGestures { _, pan, zoom, _ ->
                             scale = (scale * zoom).coerceIn(1f, 5f)
-                            // Basic offset clamping can be added here if needed
                             offset += pan
                         }
                     }
