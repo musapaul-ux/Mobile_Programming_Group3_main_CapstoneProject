@@ -60,7 +60,8 @@ fun AdminUsersScreen(
                 .padding(padding)
                 .padding(dimensionResource(R.dimen.padding_medium))
         ) {
-            items(users) { user ->
+            // Optimization: Added stable key to items
+            items(users, key = { it.id }) { user ->
                 UserItem(
                     user = user,
                     onEdit = { userToEdit = user },

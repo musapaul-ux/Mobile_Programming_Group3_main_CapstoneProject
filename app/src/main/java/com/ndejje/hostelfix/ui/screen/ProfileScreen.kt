@@ -6,7 +6,6 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.*
@@ -36,8 +35,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.dimensionResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -45,7 +42,6 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.ndejje.hostelfix.R
 import com.ndejje.hostelfix.data.local.User
 import com.ndejje.hostelfix.data.repository.UserRepository
 import com.ndejje.hostelfix.ui.components.UserDialog
@@ -68,7 +64,19 @@ fun ProfileScreen(
     val context = LocalContext.current
     val scrollState = rememberScrollState()
 
-    // Remember the image request to prevent unnecessary reloads
+    // Optimization: Cache the gradient brush to avoid redraws
+    val primaryColor = MaterialTheme.colorScheme.primaryContainer
+    val backgroundColor = MaterialTheme.colorScheme.background
+    val gradientBrush = remember(primaryColor, backgroundColor) {
+        Brush.verticalGradient(
+            colors = listOf(
+                primaryColor.copy(alpha = 0.4f),
+                backgroundColor
+            )
+        )
+    }
+
+    // Optimization: Stable image request
     val imageRequest = remember(user.profilePictureUri) {
         ImageRequest.Builder(context)
             .data(user.profilePictureUri?.let { File(it) })
@@ -94,17 +102,10 @@ fun ProfileScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
-                        MaterialTheme.colorScheme.background
-                    )
-                )
-            )
+            .background(gradientBrush)
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            // Stable Header: Fixed at the top
+            // Header - Stable positioning outside scroll area
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -128,7 +129,7 @@ fun ProfileScreen(
                 }
             }
 
-            // Scrollable Content area
+            // Content - Scrollable area starts here
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -139,7 +140,6 @@ fun ProfileScreen(
             ) {
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // Profile Image with Ring - Fixed size to prevent shifting
                 Box(contentAlignment = Alignment.BottomEnd) {
                     Surface(
                         modifier = Modifier
@@ -183,7 +183,6 @@ fun ProfileScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Name and Role
                 Text(
                     text = user.name,
                     style = MaterialTheme.typography.headlineMedium,
@@ -208,7 +207,6 @@ fun ProfileScreen(
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // Info Cards
                 ProfileInfoCard(
                     icon = Icons.Default.Email,
                     label = "Email Address",
@@ -225,7 +223,6 @@ fun ProfileScreen(
 
                 Spacer(modifier = Modifier.height(40.dp))
 
-                // Action Buttons
                 Button(
                     onClick = onLogout,
                     modifier = Modifier
