@@ -114,11 +114,15 @@ fun HostelFixApp() {
         drawerContent = {
             if (isAdmin && showBars) {
                 ModalDrawerSheet {
-                    // Admin Account Header
+                    // Admin Account Header - Tapping navigates to Profile
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .background(MaterialTheme.colorScheme.primaryContainer)
+                            .clickable {
+                                scope.launch { drawerState.close() }
+                                navController.navigate(Screen.Profile.route)
+                            }
                             .padding(dimensionResource(R.dimen.padding_large))
                     ) {
                         Column(horizontalAlignment = Alignment.Start) {
@@ -133,7 +137,7 @@ fun HostelFixApp() {
                                 ) {
                                     if (currentUser?.profilePictureUri != null) {
                                         AsyncImage(
-                                            model = ImageRequest.Builder(context)
+                                            model = ImageRequest.Builder(app)
                                                 .data(File(currentUser?.profilePictureUri!!))
                                                 .crossfade(true)
                                                 .build(),
@@ -309,11 +313,11 @@ fun HostelFixApp() {
                     }
                 }
             }
-        ) { scaffoldPadding ->
+        ) { innerPadding ->
             NavHost(
                 navController = navController,
                 startDestination = Screen.Welcome.route,
-                modifier = Modifier.padding(scaffoldPadding)
+                modifier = Modifier.padding(innerPadding)
             ) {
                 composable(Screen.Welcome.route) {
                     WelcomeScreen(
