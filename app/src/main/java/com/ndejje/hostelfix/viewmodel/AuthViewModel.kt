@@ -59,6 +59,16 @@ class AuthViewModel(private val repository: UserRepository) : ViewModel() {
     /**
      * Updates the profile picture for the currently logged-in user.
      */
+    fun updateUser(user: User) {
+        viewModelScope.launch {
+            repository.insertUser(user)
+            _currentUser.value = user
+        }
+    }
+
+    /**
+     * Updates the current user's profile picture URI.
+     */
     fun updateProfilePicture(uri: String) {
         viewModelScope.launch {
             _currentUser.value?.let { user ->

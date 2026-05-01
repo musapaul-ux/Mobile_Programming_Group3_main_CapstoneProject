@@ -17,8 +17,6 @@ import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -64,7 +62,7 @@ sealed class BottomNavItem(val screen: Screen, val labelRes: Int, val icon: Imag
     object Profile : BottomNavItem(Screen.Profile, R.string.profile, Icons.Default.Person)
 
     // Admin items
-    object AdminDashboard : BottomNavItem(Screen.AdminHome, R.string.admin_dashboard, Icons.Default.Home)
+    object AdminDashboard : BottomNavItem(Screen.AdminHome, R.string.admin_dashboard, Icons.Default.Dashboard)
     object AdminComplaints : BottomNavItem(Screen.AdminComplaints, R.string.all_complaints, Icons.Default.List)
     object AdminUsers : BottomNavItem(Screen.AdminUsers, R.string.user_management, Icons.Default.Person)
 }
@@ -96,11 +94,15 @@ fun HostelFixApp() {
         drawerContent = {
             if (isAdmin && showBars) {
                 ModalDrawerSheet {
-                    // Admin Account Header
+                    // Admin Account Header - Tapping navigates to Profile
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .background(MaterialTheme.colorScheme.primaryContainer)
+                            .clickable {
+                                scope.launch { drawerState.close() }
+                                navController.navigate(Screen.Profile.route)
+                            }
                             .padding(dimensionResource(R.dimen.padding_large))
                     ) {
                         Column(horizontalAlignment = Alignment.Start) {
@@ -114,7 +116,7 @@ fun HostelFixApp() {
                                 ) {
                                     if (currentUser?.profilePictureUri != null) {
                                         AsyncImage(
-                                            model = ImageRequest.Builder(context)
+                                            model = ImageRequest.Builder(app)
                                                 .data(File(currentUser?.profilePictureUri!!))
                                                 .crossfade(true)
                                                 .build(),
