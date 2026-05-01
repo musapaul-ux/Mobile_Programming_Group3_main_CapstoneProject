@@ -11,10 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -32,30 +29,33 @@ fun MyComplaintsScreen(
     viewModel: ComplaintViewModel,
     onNavigateBack: () -> Unit
 ) {
-    val complaints by viewModel.getComplaintsByUserId(userId).collectAsState()
+    // Collect from a stable StateFlow cached in the ViewModel
+    val complaintsState by viewModel.getComplaintsState(userId).collectAsState()
+
+    // Optimization: remember the gradient brush
+    val primaryColor = MaterialTheme.colorScheme.primaryContainer
+    val backgroundColor = MaterialTheme.colorScheme.background
+    val gradientBrush = remember(primaryColor, backgroundColor) {
+        Brush.verticalGradient(
+            colors = listOf(
+                primaryColor.copy(alpha = 0.4f),
+                backgroundColor
+            )
+        )
+    }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
-                        MaterialTheme.colorScheme.background
-                    )
-                )
-            )
+            .background(gradientBrush)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-        ) {
-            // Header - Fixed at top to prevent jumping
+        Column(modifier = Modifier.fillMaxSize()) {
+            // Header - Fixed at top for stability
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .statusBarsPadding()
-                    .padding(horizontal = 4.dp, vertical = 4.dp),
+                    .padding(horizontal = 8.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = onNavigateBack) {
@@ -70,26 +70,36 @@ fun MyComplaintsScreen(
                 )
             }
 
-            if (complaints.isEmpty()) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = stringResource(R.string.no_complaints),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+            // Explicit state handling to prevent visual jumping
+            when (val complaints = complaintsState) {
+                null -> {
+                    // Loading State
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(32.dp))
+                    }
                 }
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 24.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    // Added unique key to prevent list jumping during updates
-                    items(complaints, key = { it.id }) { complaint ->
-                        ComplaintItem(complaint)
+                else -> {
+                    if (complaints.isEmpty()) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = stringResource(R.string.no_complaints),
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 24.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            items(complaints, key = { it.id }) { complaint ->
+                                ComplaintItem(complaint)
+                            }
+                        }
                     }
                 }
             }
@@ -160,8 +170,12 @@ fun ComplaintItem(complaint: Complaint) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            val dateStr = remember(complaint.timestamp) {
+                SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault()).format(Date(complaint.timestamp))
+            }
+
             Text(
-                text = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault()).format(Date(complaint.timestamp)),
+                text = dateStr,
                 style = MaterialTheme.typography.labelSmall,
                 modifier = Modifier.align(Alignment.End),
                 color = MaterialTheme.colorScheme.outline

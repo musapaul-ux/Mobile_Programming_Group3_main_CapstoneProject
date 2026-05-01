@@ -12,8 +12,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -37,27 +35,32 @@ fun CreateComplaintScreen(
     var showError by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
 
+    // Optimization: remember the gradient brush to prevent flickering during typing
+    val primaryColor = MaterialTheme.colorScheme.primaryContainer
+    val backgroundColor = MaterialTheme.colorScheme.background
+    val gradientBrush = remember(primaryColor, backgroundColor) {
+        Brush.verticalGradient(
+            colors = listOf(
+                primaryColor.copy(alpha = 0.4f),
+                backgroundColor
+            )
+        )
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
-                        MaterialTheme.colorScheme.background
-                    )
-                )
-            )
+            .background(gradientBrush)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .statusBarsPadding()
         ) {
-            // Header
+            // Header - Fixed at top for stability
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .statusBarsPadding()
                     .padding(horizontal = 8.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -103,7 +106,8 @@ fun CreateComplaintScreen(
                             label = { Text("Hostel Name") },
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp),
-                            isError = showError && hostelName.isBlank()
+                            isError = showError && hostelName.isBlank(),
+                            singleLine = true
                         )
                         
                         Spacer(modifier = Modifier.height(16.dp))
@@ -117,7 +121,8 @@ fun CreateComplaintScreen(
                             label = { Text("Room Number") },
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp),
-                            isError = showError && roomNumber.isBlank()
+                            isError = showError && roomNumber.isBlank(),
+                            singleLine = true
                         )
                         
                         Spacer(modifier = Modifier.height(16.dp))
@@ -131,7 +136,8 @@ fun CreateComplaintScreen(
                             label = { Text(stringResource(R.string.title)) },
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp),
-                            isError = showError && title.isBlank()
+                            isError = showError && title.isBlank(),
+                            singleLine = true
                         )
                         
                         Spacer(modifier = Modifier.height(16.dp))

@@ -11,10 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -31,30 +28,33 @@ fun AdminComplaintsScreen(
     viewModel: ComplaintViewModel,
     onNavigateBack: () -> Unit
 ) {
-    val complaints by viewModel.allComplaints.collectAsState()
+    // Collect from a stable StateFlow provided by the ViewModel
+    val complaintsState by viewModel.allComplaints.collectAsState()
+
+    // Optimization: remember the gradient brush to avoid redraws
+    val primaryColor = MaterialTheme.colorScheme.primaryContainer
+    val backgroundColor = MaterialTheme.colorScheme.background
+    val gradientBrush = remember(primaryColor, backgroundColor) {
+        Brush.verticalGradient(
+            colors = listOf(
+                primaryColor.copy(alpha = 0.4f),
+                backgroundColor
+            )
+        )
+    }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
-                        MaterialTheme.colorScheme.background
-                    )
-                )
-            )
+            .background(gradientBrush)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-        ) {
+        Column(modifier = Modifier.fillMaxSize()) {
             // Header - Fixed at top for stability
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .statusBarsPadding()
-                    .padding(horizontal = 4.dp, vertical = 4.dp),
+                    .padding(horizontal = 8.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = onNavigateBack) {
@@ -69,27 +69,38 @@ fun AdminComplaintsScreen(
                 )
             }
 
-            if (complaints.isEmpty()) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "No complaints found",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+            // Explicit state handling to prevent visual jumping
+            when (val complaints = complaintsState) {
+                null -> {
+                    // Loading State
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(32.dp))
+                    }
                 }
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 24.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    // Added unique key to prevent list jumping during status updates
-                    items(complaints, key = { it.id }) { complaint ->
-                        AdminComplaintItem(complaint) { newStatus ->
-                            viewModel.updateStatus(complaint.id, newStatus)
+                else -> {
+                    if (complaints.isEmpty()) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "No complaints found",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 24.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            // Unique keys ensure smooth updates when status changes
+                            items(complaints, key = { it.id }) { complaint ->
+                                AdminComplaintItem(complaint) { newStatus ->
+                                    viewModel.updateStatus(complaint.id, newStatus)
+                                }
+                            }
                         }
                     }
                 }
@@ -166,8 +177,12 @@ fun AdminComplaintItem(complaint: Complaint, onUpdateStatus: (String) -> Unit) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                val dateStr = remember(complaint.timestamp) {
+                    SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault()).format(Date(complaint.timestamp))
+                }
+                
                 Text(
-                    text = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault()).format(Date(complaint.timestamp)),
+                    text = dateStr,
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.outline
                 )

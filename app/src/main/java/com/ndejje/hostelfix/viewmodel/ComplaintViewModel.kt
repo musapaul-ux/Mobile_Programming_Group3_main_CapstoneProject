@@ -4,9 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ndejje.hostelfix.data.model.Complaint
 import com.ndejje.hostelfix.data.repository.ComplaintRepository
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 /**
@@ -16,34 +14,37 @@ import kotlinx.coroutines.launch
 class ComplaintViewModel(private val repository: ComplaintRepository) : ViewModel() {
 
     /**
-     * A StateFlow that provides a real-time list of all complaints in the system.
-     * Used mainly by the Admin dashboard.
+     * A StateFlow that provides a real-time list of all complaints.
+     * SharingStarted.Lazily keeps the flow active as long as the ViewModel exists,
+     * preventing "jumps" back to empty state when navigating away and back.
      */
-    val allComplaints: StateFlow<List<Complaint>> = repository.getAllComplaints()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val allComplaints: StateFlow<List<Complaint>?> = repository.getAllComplaints()
+        .map { it as List<Complaint>? }
+        .stateIn(viewModelScope, SharingStarted.Lazily, null)
+
+    private val _userComplaints = MutableStateFlow<Map<Int, StateFlow<List<Complaint>?>>>(emptyMap())
 
     /**
-     * Retrieves a stream of complaints submitted by a specific user.
-     * @param userId The ID of the student.
+     * Retrieves a stable StateFlow of complaints for a specific user.
+     * Caches the flow to ensure the same object is returned, preventing recomposition loops.
      */
-    fun getComplaintsByUserId(userId: Int): StateFlow<List<Complaint>> = 
-        repository.getComplaintsByUserId(userId)
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    fun getComplaintsState(userId: Int): StateFlow<List<Complaint>?> {
+        val currentMap = _userComplaints.value
+        return currentMap[userId] ?: run {
+            val newFlow = repository.getComplaintsByUserId(userId)
+                .map { it as List<Complaint>? }
+                .stateIn(viewModelScope, SharingStarted.Lazily, null)
+            _userComplaints.value = currentMap + (userId to newFlow)
+            newFlow
+        }
+    }
 
-    /**
-     * Submits a new complaint to the repository.
-     */
     fun submitComplaint(complaint: Complaint) {
         viewModelScope.launch {
             repository.insertComplaint(complaint)
         }
     }
 
-    /**
-     * Updates the resolution status of a specific complaint.
-     * @param id The complaint ID.
-     * @param status The new status (e.g., "Resolved").
-     */
     fun updateStatus(id: Int, status: String) {
         viewModelScope.launch {
             repository.updateComplaintStatus(id, status)
