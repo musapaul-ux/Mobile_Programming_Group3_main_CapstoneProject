@@ -73,12 +73,7 @@ fun ComplaintItem(complaint: Complaint) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = complaint.title,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
+
                 
                 Surface(
                     color = when (complaint.status) {

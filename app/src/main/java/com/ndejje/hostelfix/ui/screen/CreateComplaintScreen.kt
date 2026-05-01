@@ -37,8 +37,7 @@ fun CreateComplaintScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text(text = stringResource(R.string.submit_complaint), style = MaterialTheme.typography.headlineMedium)
-        Spacer(modifier = Modifier.height(dimensionResource(R.dimen.spacer_large)))
+
         
         // Hostel Name Input
         OutlinedTextField(
