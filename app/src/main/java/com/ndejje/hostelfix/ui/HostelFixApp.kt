@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Home
@@ -46,7 +45,6 @@ import com.ndejje.hostelfix.ui.screen.*
 import com.ndejje.hostelfix.viewmodel.AppViewModelProvider
 import com.ndejje.hostelfix.viewmodel.AuthViewModel
 import com.ndejje.hostelfix.viewmodel.ComplaintViewModel
-import com.ndejje.hostelfix.viewmodel.ThemeViewModel
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -75,10 +73,8 @@ fun HostelFixApp() {
     val navController = rememberNavController()
     val authViewModel: AuthViewModel = viewModel(factory = AppViewModelProvider.Factory)
     val complaintViewModel: ComplaintViewModel = viewModel(factory = AppViewModelProvider.Factory)
-    val themeViewModel: ThemeViewModel = viewModel(factory = AppViewModelProvider.Factory)
     
     val currentUser by authViewModel.currentUser.collectAsState()
-    val isDarkMode by themeViewModel.isDarkMode.collectAsState()
     val context = LocalContext.current
     val app = context.applicationContext as HostelFixApplication
 
@@ -91,22 +87,6 @@ fun HostelFixApp() {
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-
-    // Launcher for selecting an image from the gallery
-    val imagePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        uri?.let { selectedUri ->
-            scope.launch {
-                currentUser?.let { user ->
-                    val internalPath = saveImageToInternalStorage(context, selectedUri, user.id)
-                    if (internalPath != null) {
-                        authViewModel.updateProfilePicture(internalPath)
-                    }
-                }
-            }
-        }
-    }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -131,8 +111,7 @@ fun HostelFixApp() {
                                     modifier = Modifier
                                         .size(80.dp)
                                         .clip(CircleShape)
-                                        .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape)
-                                        .clickable { imagePickerLauncher.launch("image/*") },
+                                        .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape),
                                     color = MaterialTheme.colorScheme.surfaceVariant
                                 ) {
                                     if (currentUser?.profilePictureUri != null) {
@@ -153,19 +132,6 @@ fun HostelFixApp() {
                                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
-                                }
-                                Surface(
-                                    modifier = Modifier
-                                        .size(24.dp)
-                                        .clip(CircleShape),
-                                    color = MaterialTheme.colorScheme.primary
-                                ) {
-                                    Icon(
-                                        Icons.Default.CameraAlt,
-                                        contentDescription = "Update Picture",
-                                        modifier = Modifier.padding(4.dp),
-                                        tint = Color.White
-                                    )
                                 }
                             }
                             Spacer(modifier = Modifier.height(12.dp))
@@ -245,7 +211,7 @@ fun HostelFixApp() {
                             Text(
                                 text = when (currentDestination?.route) {
                                     Screen.StudentHome.route -> stringResource(R.string.welcome_title)
-                                    Screen.AdminHome.route -> ""
+                                    Screen.AdminHome.route -> stringResource(R.string.admin_dashboard)
                                     Screen.CreateComplaint.route -> stringResource(R.string.submit_complaint)
                                     Screen.MyComplaints.route -> stringResource(R.string.my_complaints)
                                     Screen.AdminComplaints.route -> stringResource(R.string.all_complaints)
@@ -262,19 +228,9 @@ fun HostelFixApp() {
                                 }
                             }
                         },
-                        actions = {
-                            IconButton(onClick = { themeViewModel.toggleDarkMode(!isDarkMode) }) {
-                                Icon(
-                                    imageVector = if (isDarkMode) Icons.Default.LightMode else Icons.Default.DarkMode,
-                                    contentDescription = "Toggle Theme",
-                                    tint = MaterialTheme.colorScheme.onPrimary
-                                )
-                            }
-                        },
                         colors = TopAppBarDefaults.topAppBarColors(
                             containerColor = MaterialTheme.colorScheme.primary,
                             titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                            actionIconContentColor = MaterialTheme.colorScheme.onPrimary,
                             navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
                         )
                     )

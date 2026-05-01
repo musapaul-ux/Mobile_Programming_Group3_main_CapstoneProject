@@ -10,6 +10,7 @@ import kotlinx.coroutines.launch
 
 /**
  * ViewModel responsible for handling user authentication, including login and registration.
+ * It also manages the current user session and profile updates.
  */
 class AuthViewModel(private val repository: UserRepository) : ViewModel() {
 
@@ -56,7 +57,7 @@ class AuthViewModel(private val repository: UserRepository) : ViewModel() {
     }
 
     /**
-     * Updates the current user information in the state and database.
+     * Updates the profile picture for the currently logged-in user.
      */
     fun updateUser(user: User) {
         viewModelScope.launch {
@@ -69,11 +70,12 @@ class AuthViewModel(private val repository: UserRepository) : ViewModel() {
      * Updates the current user's profile picture URI.
      */
     fun updateProfilePicture(uri: String) {
-        val user = _currentUser.value ?: return
         viewModelScope.launch {
-            val updatedUser = user.copy(profilePictureUri = uri)
-            repository.insertUser(updatedUser)
-            _currentUser.value = updatedUser
+            _currentUser.value?.let { user ->
+                val updatedUser = user.copy(profilePictureUri = uri)
+                repository.insertUser(updatedUser)
+                _currentUser.value = updatedUser
+            }
         }
     }
 
