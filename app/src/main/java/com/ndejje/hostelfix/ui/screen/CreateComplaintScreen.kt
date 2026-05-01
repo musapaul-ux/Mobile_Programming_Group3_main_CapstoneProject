@@ -1,16 +1,22 @@
 package com.ndejje.hostelfix.ui.screen
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
 import com.ndejje.hostelfix.R
 import com.ndejje.hostelfix.data.model.Complaint
 import com.ndejje.hostelfix.viewmodel.ComplaintViewModel
 
+/**
+ * Screen for students to submit a new hostel complaint.
+ * Ensures data validation for required fields and numeric input for room numbers.
+ */
 @Composable
 fun CreateComplaintScreen(
     userId: Int,
@@ -34,6 +40,7 @@ fun CreateComplaintScreen(
         Text(text = stringResource(R.string.submit_complaint), style = MaterialTheme.typography.headlineMedium)
         Spacer(modifier = Modifier.height(dimensionResource(R.dimen.spacer_large)))
         
+        // Hostel Name Input
         OutlinedTextField(
             value = hostelName,
             onValueChange = { 
@@ -47,19 +54,25 @@ fun CreateComplaintScreen(
         
         Spacer(modifier = Modifier.height(dimensionResource(R.dimen.spacer_medium)))
         
+        // Room Number Input - Restricted to numbers only
         OutlinedTextField(
             value = roomNumber,
-            onValueChange = { 
-                roomNumber = it
-                showError = false
+            onValueChange = { input ->
+                // Only allow numeric input
+                if (input.all { it.isDigit() }) {
+                    roomNumber = input
+                    showError = false
+                }
             },
             label = { Text("Room Number") },
             modifier = Modifier.fillMaxWidth(),
-            isError = showError && roomNumber.isBlank()
+            isError = showError && roomNumber.isBlank(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
         )
         
         Spacer(modifier = Modifier.height(dimensionResource(R.dimen.spacer_medium)))
         
+        // Complaint Title
         OutlinedTextField(
             value = title,
             onValueChange = { 
@@ -73,6 +86,7 @@ fun CreateComplaintScreen(
         
         Spacer(modifier = Modifier.height(dimensionResource(R.dimen.spacer_medium)))
         
+        // Problem Description
         OutlinedTextField(
             value = description,
             onValueChange = { 
@@ -87,6 +101,7 @@ fun CreateComplaintScreen(
         
         Spacer(modifier = Modifier.height(dimensionResource(R.dimen.spacer_large)))
         
+        // Error Feedback
         if (showError) {
             Text(
                 text = "All fields are required",
@@ -96,6 +111,7 @@ fun CreateComplaintScreen(
             )
         }
         
+        // Submit Button
         Button(
             onClick = {
                 if (hostelName.isNotBlank() && roomNumber.isNotBlank() && title.isNotBlank() && description.isNotBlank()) {

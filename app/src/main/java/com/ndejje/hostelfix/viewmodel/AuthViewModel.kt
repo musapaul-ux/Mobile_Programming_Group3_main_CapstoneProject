@@ -57,7 +57,7 @@ class AuthViewModel(private val repository: UserRepository) : ViewModel() {
     }
 
     /**
-     * Updates the profile picture for the currently logged-in user.
+     * Updates the user information in the database and the current session state.
      */
     fun updateUser(user: User) {
         viewModelScope.launch {
@@ -67,7 +67,7 @@ class AuthViewModel(private val repository: UserRepository) : ViewModel() {
     }
 
     /**
-     * Updates the current user's profile picture URI.
+     * Updates the profile picture for the currently logged-in user.
      */
     fun updateProfilePicture(uri: String) {
         viewModelScope.launch {

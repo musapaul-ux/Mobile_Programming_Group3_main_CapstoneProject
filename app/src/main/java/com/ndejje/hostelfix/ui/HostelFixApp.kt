@@ -1,28 +1,18 @@
 package com.ndejje.hostelfix.ui
 
-import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.DarkMode
-import androidx.compose.material.icons.filled.Dashboard
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.LightMode
-import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -49,24 +39,24 @@ import kotlinx.coroutines.launch
 import java.io.File
 
 /**
- * Defines the items to be displayed in the Bottom Navigation Bar.
+ * Navigation items for the Bottom Navigation Bar.
  */
 sealed class BottomNavItem(val screen: Screen, val labelRes: Int, val icon: ImageVector) {
-    // Universal items
-    object WelcomeHome : BottomNavItem(Screen.Welcome, R.string.app_name, Icons.Default.Home)
+    // Home button points to the respective Dashboards
+    object Home : BottomNavItem(Screen.StudentHome, R.string.dashboard, Icons.Default.Home)
+    object AdminHome : BottomNavItem(Screen.AdminHome, R.string.dashboard, Icons.Default.Home)
     
-    // Student items
-    object StudentDashboard : BottomNavItem(Screen.StudentHome, R.string.welcome_title, Icons.Default.Dashboard)
     object AddComplaint : BottomNavItem(Screen.CreateComplaint, R.string.submit_complaint, Icons.Default.Add)
-    object MyComplaints : BottomNavItem(Screen.MyComplaints, R.string.my_complaints, Icons.Default.List)
+    object MyComplaints : BottomNavItem(Screen.MyComplaints, R.string.my_complaints, Icons.AutoMirrored.Filled.List)
     object Profile : BottomNavItem(Screen.Profile, R.string.profile, Icons.Default.Person)
 
-    // Admin items
-    object AdminDashboard : BottomNavItem(Screen.AdminHome, R.string.admin_dashboard, Icons.Default.Dashboard)
-    object AdminComplaints : BottomNavItem(Screen.AdminComplaints, R.string.all_complaints, Icons.Default.List)
-    object AdminUsers : BottomNavItem(Screen.AdminUsers, R.string.user_management, Icons.Default.Person)
+    object AdminComplaints : BottomNavItem(Screen.AdminComplaints, R.string.all_complaints, Icons.AutoMirrored.Filled.List)
+    object AdminUsers : BottomNavItem(Screen.AdminUsers, R.string.user_management, Icons.Default.Group)
 }
 
+/**
+ * Main application composable that handles navigation and UI structure.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HostelFixApp() {
@@ -81,7 +71,7 @@ fun HostelFixApp() {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
 
-    // Logic to show/hide Top and Bottom bars based on the current screen
+    // Top and Bottom bars are shown only for authenticated users (not on Welcome/Login/Register)
     val showBars = currentDestination?.route !in listOf(Screen.Welcome.route, Screen.Login.route, Screen.Register.route)
     val isAdmin = currentUser?.role == "Admin"
 
@@ -94,7 +84,7 @@ fun HostelFixApp() {
         drawerContent = {
             if (isAdmin && showBars) {
                 ModalDrawerSheet {
-                    // Admin Account Header - Tapping navigates to Profile
+                    // Admin Sidebar Header
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -105,92 +95,70 @@ fun HostelFixApp() {
                             }
                             .padding(dimensionResource(R.dimen.padding_large))
                     ) {
-                        Column(horizontalAlignment = Alignment.Start) {
-                            Box(contentAlignment = Alignment.BottomEnd) {
-                                Surface(
-                                    modifier = Modifier
-                                        .size(80.dp)
-                                        .clip(CircleShape)
-                                        .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape),
-                                    color = MaterialTheme.colorScheme.surfaceVariant
-                                ) {
-                                    if (currentUser?.profilePictureUri != null) {
-                                        AsyncImage(
-                                            model = ImageRequest.Builder(app)
-                                                .data(File(currentUser?.profilePictureUri!!))
-                                                .crossfade(true)
-                                                .build(),
-                                            contentDescription = "Admin Profile Picture",
-                                            modifier = Modifier.fillMaxSize(),
-                                            contentScale = ContentScale.Crop
-                                        )
-                                    } else {
-                                        Icon(
-                                            Icons.Default.Person,
-                                            contentDescription = null,
-                                            modifier = Modifier.padding(16.dp),
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
+                        Column {
+                            Surface(
+                                modifier = Modifier.size(64.dp),
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.surfaceVariant
+                            ) {
+                                if (currentUser?.profilePictureUri != null) {
+                                    AsyncImage(
+                                        model = ImageRequest.Builder(context)
+                                            .data(File(currentUser?.profilePictureUri!!))
+                                            .crossfade(true)
+                                            .build(),
+                                        contentDescription = null,
+                                        modifier = Modifier.fillMaxSize().clip(CircleShape),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                } else {
+                                    Icon(
+                                        Icons.Default.Person,
+                                        contentDescription = null,
+                                        modifier = Modifier.padding(16.dp),
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
                                 }
                             }
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Text(
-                                text = currentUser?.name ?: "Admin",
-                                style = MaterialTheme.typography.titleLarge,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                            Text(
-                                text = currentUser?.role ?: "Administrator",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(text = currentUser?.name ?: "Admin", style = MaterialTheme.typography.titleMedium)
+                            Text(text = currentUser?.email ?: "", style = MaterialTheme.typography.bodySmall)
                         }
                     }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        "Navigation", 
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp), 
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.outline
-                    )
+                    HorizontalDivider()
                     
+                    // Admin Drawer Items
                     NavigationDrawerItem(
-                        label = { Text("Home") },
+                        label = { Text("Dashboard") },
                         selected = currentDestination?.route == Screen.AdminHome.route,
-                        icon = { Icon(Icons.Default.Home, contentDescription = null) },
+                        icon = { Icon(Icons.Default.Home, null) },
                         onClick = {
                             scope.launch { drawerState.close() }
-                            navController.navigate(Screen.AdminHome.route) {
-                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
+                            navController.navigate(Screen.AdminHome.route)
                         }
                     )
                     NavigationDrawerItem(
                         label = { Text("Complaints") },
                         selected = currentDestination?.route == Screen.AdminComplaints.route,
-                        icon = { Icon(Icons.Default.List, contentDescription = null) },
+                        icon = { Icon(Icons.AutoMirrored.Filled.List, null) },
                         onClick = {
                             scope.launch { drawerState.close() }
                             navController.navigate(Screen.AdminComplaints.route)
                         }
                     )
                     NavigationDrawerItem(
-                        label = { Text("User Management") },
+                        label = { Text("Users") },
                         selected = currentDestination?.route == Screen.AdminUsers.route,
-                        icon = { Icon(Icons.Default.Person, contentDescription = null) },
+                        icon = { Icon(Icons.Default.Group, null) },
                         onClick = {
                             scope.launch { drawerState.close() }
                             navController.navigate(Screen.AdminUsers.route)
                         }
                     )
-                    Spacer(modifier = Modifier.weight(1f))
                     NavigationDrawerItem(
                         label = { Text("Logout") },
                         selected = false,
+                        icon = { Icon(Icons.AutoMirrored.Filled.Logout, null) },
                         onClick = {
                             scope.launch { drawerState.close() }
                             authViewModel.logout()
@@ -239,21 +207,16 @@ fun HostelFixApp() {
             bottomBar = {
                 if (showBars && !isAdmin) {
                     val items = listOf(
-                        BottomNavItem.WelcomeHome, 
-                        BottomNavItem.StudentDashboard,
+                        BottomNavItem.Home, 
                         BottomNavItem.AddComplaint, 
                         BottomNavItem.MyComplaints, 
                         BottomNavItem.Profile
                     )
-
-                    NavigationBar(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                    ) {
+                    NavigationBar {
                         items.forEach { item ->
                             NavigationBarItem(
-                                icon = { Icon(item.icon, contentDescription = null) },
-                                label = { Text(if(item == BottomNavItem.WelcomeHome) "Home" else stringResource(item.labelRes)) },
+                                icon = { Icon(item.icon, null) },
+                                label = { Text(stringResource(item.labelRes)) },
                                 selected = currentDestination?.hierarchy?.any { it.route == item.screen.route } == true,
                                 onClick = {
                                     navController.navigate(item.screen.route) {
@@ -276,24 +239,15 @@ fun HostelFixApp() {
                 modifier = Modifier.padding(innerPadding)
             ) {
                 composable(Screen.Welcome.route) {
-                    WelcomeScreen(
-                        onGetStarted = {
-                            navController.navigate(Screen.Login.route)
-                        }
-                    )
+                    WelcomeScreen(onGetStarted = { navController.navigate(Screen.Login.route) })
                 }
                 composable(Screen.Login.route) {
                     LoginScreen(
                         viewModel = authViewModel,
                         onLoginSuccess = { role ->
-                            if (role == "Admin") {
-                                navController.navigate(Screen.AdminHome.route) {
-                                    popUpTo(Screen.Welcome.route) { inclusive = true }
-                                }
-                            } else {
-                                navController.navigate(Screen.StudentHome.route) {
-                                    popUpTo(Screen.Welcome.route) { inclusive = true }
-                                }
+                            val startRoute = if (role == "Admin") Screen.AdminHome.route else Screen.StudentHome.route
+                            navController.navigate(startRoute) {
+                                popUpTo(Screen.Welcome.route) { inclusive = true }
                             }
                         },
                         onNavigateToRegister = {
@@ -320,9 +274,7 @@ fun HostelFixApp() {
                 composable(Screen.StudentHome.route) {
                     if (currentUser == null || currentUser?.role != "Student") {
                         LaunchedEffect(Unit) {
-                            navController.navigate(Screen.Login.route) {
-                                popUpTo(0)
-                            }
+                            navController.navigate(Screen.Login.route) { popUpTo(0) }
                         }
                     } else {
                         StudentHomeScreen(
@@ -336,12 +288,10 @@ fun HostelFixApp() {
                 composable(Screen.AdminHome.route) {
                     if (currentUser == null || currentUser?.role != "Admin") {
                         LaunchedEffect(Unit) {
-                            navController.navigate(Screen.Login.route) {
-                                popUpTo(0)
-                            }
+                            navController.navigate(Screen.Login.route) { popUpTo(0) }
                         }
                     } else {
-                        AdminHomeScreen()
+                        AdminHomeScreen(authViewModel = authViewModel)
                     }
                 }
                 composable(Screen.CreateComplaint.route) {
