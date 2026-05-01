@@ -24,6 +24,12 @@ interface UserDao {
     suspend fun getUserByEmail(email: String): User?
 
     /**
+     * Retrieves a single user by their ID.
+     */
+    @Query("SELECT * FROM users WHERE id = :id LIMIT 1")
+    suspend fun getUserById(id: Int): User?
+
+    /**
      * Observes all users in the database.
      * Returns a Flow that emits updates whenever the table changes.
      */

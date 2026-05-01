@@ -16,7 +16,7 @@ class UserViewModel(application: Application) : AndroidViewModel(application) {
 
     init {
         val dao = DatabaseProvider.getDatabase(application).userDao()
-        repository = UserRepository(dao)
+        repository = UserRepository(dao, application)
         allUsers = repository.allUsers
     }
 

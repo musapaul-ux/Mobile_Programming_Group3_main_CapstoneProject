@@ -17,6 +17,10 @@ class AuthViewModel(private val repository: UserRepository) : ViewModel() {
     private val _currentUser = MutableStateFlow<User?>(null)
     val currentUser: StateFlow<User?> = _currentUser
 
+    // Internal state for tracking if the session has been initialized from SharedPreferences
+    private val _isSessionLoaded = MutableStateFlow(false)
+    val isSessionLoaded: StateFlow<Boolean> = _isSessionLoaded
+
     // Internal state for tracking the overall authentication status (Success, Error, Loading)
     private val _authState = MutableStateFlow<AuthState>(AuthState.Idle)
     val authState: StateFlow<AuthState> = _authState
@@ -25,7 +29,23 @@ class AuthViewModel(private val repository: UserRepository) : ViewModel() {
         // Automatically ensure a default admin account exists upon app startup
         viewModelScope.launch {
             repository.createDefaultAdmin()
+            loadSession()
         }
+    }
+
+    /**
+     * Loads a persisted user session from SharedPreferences.
+     */
+    private suspend fun loadSession() {
+        val userId = repository.getSessionUserId()
+        if (userId != -1) {
+            val user = repository.getUserById(userId)
+            if (user != null) {
+                _currentUser.value = user
+                _authState.value = AuthState.Success(user.role)
+            }
+        }
+        _isSessionLoaded.value = true
     }
 
     /**
@@ -37,6 +57,7 @@ class AuthViewModel(private val repository: UserRepository) : ViewModel() {
             val user = repository.getUserByEmail(email)
             if (user != null && user.password == password) {
                 _currentUser.value = user
+                repository.saveSession(user.id)
                 _authState.value = AuthState.Success(user.role)
             } else {
                 _authState.value = AuthState.Error("Invalid email or password")
@@ -51,7 +72,12 @@ class AuthViewModel(private val repository: UserRepository) : ViewModel() {
         viewModelScope.launch {
             _authState.value = AuthState.Loading
             repository.insertUser(user)
-            _authState.value = AuthState.Success(user.role)
+            val registeredUser = repository.getUserByEmail(user.email)
+            if (registeredUser != null) {
+                _currentUser.value = registeredUser
+                repository.saveSession(registeredUser.id)
+                _authState.value = AuthState.Success(registeredUser.role)
+            }
         }
     }
 
@@ -60,6 +86,7 @@ class AuthViewModel(private val repository: UserRepository) : ViewModel() {
      */
     fun logout() {
         _currentUser.value = null
+        repository.clearSession()
         _authState.value = AuthState.Idle
     }
 

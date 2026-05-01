@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -32,16 +33,11 @@ import com.ndejje.hostelfix.viewmodel.ComplaintViewModel
  * Defines the items to be displayed in the Bottom Navigation Bar.
  */
 sealed class BottomNavItem(val screen: Screen, val labelRes: Int, val icon: ImageVector) {
-    // Universal items
     object WelcomeHome : BottomNavItem(Screen.Welcome, R.string.app_name, Icons.Default.Home)
-    
-    // Student items
     object StudentDashboard : BottomNavItem(Screen.StudentHome, R.string.welcome_title, Icons.Default.Dashboard)
     object AddComplaint : BottomNavItem(Screen.CreateComplaint, R.string.submit_complaint, Icons.Default.Add)
     object MyComplaints : BottomNavItem(Screen.MyComplaints, R.string.my_complaints, Icons.Default.List)
     object Profile : BottomNavItem(Screen.Profile, R.string.profile, Icons.Default.Person)
-
-    // Admin items
     object AdminDashboard : BottomNavItem(Screen.AdminHome, R.string.admin_dashboard, Icons.Default.Dashboard)
     object AdminComplaints : BottomNavItem(Screen.AdminComplaints, R.string.all_complaints, Icons.Default.List)
     object AdminUsers : BottomNavItem(Screen.AdminUsers, R.string.user_management, Icons.Default.Person)
@@ -60,23 +56,42 @@ fun HostelFixApp() {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
 
-    // Logic to show/hide Top and Bottom bars based on the current screen
-    val showBars = currentDestination?.route !in listOf(Screen.Welcome.route, Screen.Login.route, Screen.Register.route)
+    // Automatic redirection if user is already logged in
+    LaunchedEffect(currentUser) {
+        currentUser?.let { user ->
+            if (currentDestination?.route in listOf(Screen.Welcome.route, Screen.Login.route, Screen.Register.route)) {
+                val dest = if (user.role == "Admin") Screen.AdminHome.route else Screen.StudentHome.route
+                navController.navigate(dest) {
+                    popUpTo(Screen.Welcome.route) { inclusive = true }
+                }
+            }
+        }
+    }
+
+    // Hide TopAppBar for redesigned screens to prevent shifts and double headers
+    val hideTopBar = currentDestination?.route in listOf(
+        Screen.Welcome.route, 
+        Screen.Login.route, 
+        Screen.Register.route,
+        Screen.Profile.route,
+        Screen.MyComplaints.route,
+        Screen.CreateComplaint.route,
+        Screen.AdminComplaints.route,
+        Screen.StudentHome.route,
+        Screen.AdminHome.route
+    )
+
+    // Only show BottomBar on authenticated screens
+    val showBottomBar = currentDestination?.route !in listOf(Screen.Welcome.route, Screen.Login.route, Screen.Register.route)
 
     Scaffold(
         topBar = {
-            if (showBars) {
+            if (!hideTopBar) {
                 TopAppBar(
                     title = {
                         Text(
                             text = when (currentDestination?.route) {
-                                Screen.StudentHome.route -> stringResource(R.string.welcome_title)
-                                Screen.AdminHome.route -> stringResource(R.string.admin_dashboard)
-                                Screen.CreateComplaint.route -> stringResource(R.string.submit_complaint)
-                                Screen.MyComplaints.route -> stringResource(R.string.my_complaints)
-                                Screen.AdminComplaints.route -> stringResource(R.string.all_complaints)
                                 Screen.AdminUsers.route -> stringResource(R.string.user_management)
-                                Screen.Profile.route -> stringResource(R.string.profile)
                                 else -> stringResource(R.string.app_name)
                             }
                         )
@@ -89,40 +104,37 @@ fun HostelFixApp() {
             }
         },
         bottomBar = {
-            if (showBars) {
-                // Determine navigation items based on user role
+            if (showBottomBar) {
                 val items = if (currentUser?.role == "Admin") {
-                    listOf(
-                        BottomNavItem.WelcomeHome, 
-                        BottomNavItem.AdminDashboard, 
-                        BottomNavItem.AdminComplaints, 
-                        BottomNavItem.AdminUsers
-                    )
+                    listOf(BottomNavItem.WelcomeHome, BottomNavItem.AdminDashboard, BottomNavItem.AdminComplaints, BottomNavItem.AdminUsers)
                 } else {
-                    listOf(
-                        BottomNavItem.WelcomeHome, 
-                        BottomNavItem.StudentDashboard,
-                        BottomNavItem.AddComplaint, 
-                        BottomNavItem.MyComplaints, 
-                        BottomNavItem.Profile
-                    )
+                    listOf(BottomNavItem.WelcomeHome, BottomNavItem.StudentDashboard, BottomNavItem.AddComplaint, BottomNavItem.MyComplaints, BottomNavItem.Profile)
                 }
 
                 NavigationBar(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    tonalElevation = 8.dp
                 ) {
                     items.forEach { item ->
+                        val isSelected = if (item == BottomNavItem.WelcomeHome) {
+                            currentDestination?.hierarchy?.any { it.route == Screen.StudentHome.route || it.route == Screen.AdminHome.route } == true
+                        } else {
+                            currentDestination?.hierarchy?.any { it.route == item.screen.route } == true
+                        }
+
                         NavigationBarItem(
                             icon = { Icon(item.icon, contentDescription = null) },
                             label = { Text(if(item == BottomNavItem.WelcomeHome) "Home" else stringResource(item.labelRes)) },
-                            selected = currentDestination?.hierarchy?.any { it.route == item.screen.route } == true,
+                            selected = isSelected,
                             onClick = {
-                                navController.navigate(item.screen.route) {
-                                    // Pop up to the start destination to avoid building up a large stack of destinations
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
-                                    }
+                                val targetRoute = if (item == BottomNavItem.WelcomeHome) {
+                                    if (currentUser?.role == "Admin") Screen.AdminHome.route else Screen.StudentHome.route
+                                } else {
+                                    item.screen.route
+                                }
+                                
+                                navController.navigate(targetRoute) {
+                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
                                     launchSingleTop = true
                                     restoreState = true
                                 }
@@ -136,28 +148,19 @@ fun HostelFixApp() {
         NavHost(
             navController = navController,
             startDestination = Screen.Welcome.route,
-            modifier = Modifier.padding(innerPadding)
+            modifier = Modifier.padding(
+                bottom = innerPadding.calculateBottomPadding(),
+                top = if (hideTopBar) 0.dp else innerPadding.calculateTopPadding()
+            )
         ) {
             composable(Screen.Welcome.route) {
-                WelcomeScreen(
-                    onGetStarted = {
-                        navController.navigate(Screen.Login.route)
-                    }
-                )
+                WelcomeScreen(onGetStarted = { navController.navigate(Screen.Login.route) })
             }
             composable(Screen.Login.route) {
                 LoginScreen(
                     viewModel = authViewModel,
-                    onLoginSuccess = { role ->
-                        if (role == "Admin") {
-                            navController.navigate(Screen.AdminHome.route) {
-                                popUpTo(Screen.Welcome.route) { inclusive = true }
-                            }
-                        } else {
-                            navController.navigate(Screen.StudentHome.route) {
-                                popUpTo(Screen.Welcome.route) { inclusive = true }
-                            }
-                        }
+                    onLoginSuccess = { _ ->
+                        // Redirection is now handled by LaunchedEffect(currentUser)
                     },
                     onNavigateToRegister = {
                         authViewModel.logout()
@@ -168,11 +171,8 @@ fun HostelFixApp() {
             composable(Screen.Register.route) {
                 RegisterScreen(
                     viewModel = authViewModel,
-                    onRegisterSuccess = { _ ->
-                        authViewModel.logout()
-                        navController.navigate(Screen.Login.route) {
-                            popUpTo(Screen.Register.route) { inclusive = true }
-                        }
+                    onRegisterSuccess = { 
+                        // Redirection is now handled by LaunchedEffect(currentUser)
                     },
                     onNavigateToLogin = {
                         authViewModel.logout()
@@ -182,11 +182,7 @@ fun HostelFixApp() {
             }
             composable(Screen.StudentHome.route) {
                 if (currentUser == null || currentUser?.role != "Student") {
-                    LaunchedEffect(Unit) {
-                        navController.navigate(Screen.Login.route) {
-                            popUpTo(0)
-                        }
-                    }
+                    LaunchedEffect(Unit) { navController.navigate(Screen.Login.route) { popUpTo(0) } }
                 } else {
                     StudentHomeScreen(
                         userName = currentUser?.name ?: "User",
@@ -198,11 +194,7 @@ fun HostelFixApp() {
             }
             composable(Screen.AdminHome.route) {
                 if (currentUser == null || currentUser?.role != "Admin") {
-                    LaunchedEffect(Unit) {
-                        navController.navigate(Screen.Login.route) {
-                            popUpTo(0)
-                        }
-                    }
+                    LaunchedEffect(Unit) { navController.navigate(Screen.Login.route) { popUpTo(0) } }
                 } else {
                     AdminHomeScreen(
                         userName = currentUser?.name ?: "Admin",
@@ -219,46 +211,34 @@ fun HostelFixApp() {
             }
             composable(Screen.CreateComplaint.route) {
                 currentUser?.let { user ->
-                    if (user.role == "Student") {
-                        CreateComplaintScreen(
-                            userId = user.id,
-                            viewModel = complaintViewModel,
-                            onNavigateBack = { navController.popBackStack() },
-                            onComplaintSubmitted = { navController.popBackStack() }
-                        )
-                    }
+                    CreateComplaintScreen(
+                        userId = user.id,
+                        viewModel = complaintViewModel,
+                        onNavigateBack = { navController.popBackStack() },
+                        onComplaintSubmitted = { navController.popBackStack() }
+                    )
                 }
             }
             composable(Screen.MyComplaints.route) {
                 currentUser?.let { user ->
-                    if (user.role == "Student") {
-                        MyComplaintsScreen(
-                            userId = user.id,
-                            viewModel = complaintViewModel,
-                            onNavigateBack = { navController.popBackStack() }
-                        )
-                    }
+                    MyComplaintsScreen(
+                        userId = user.id,
+                        viewModel = complaintViewModel,
+                        onNavigateBack = { navController.popBackStack() }
+                    )
                 }
             }
             composable(Screen.AdminComplaints.route) {
-                currentUser?.let { user ->
-                    if (user.role == "Admin") {
-                        AdminComplaintsScreen(
-                            viewModel = complaintViewModel,
-                            onNavigateBack = { navController.popBackStack() }
-                        )
-                    }
-                }
+                AdminComplaintsScreen(
+                    viewModel = complaintViewModel,
+                    onNavigateBack = { navController.popBackStack() }
+                )
             }
             composable(Screen.AdminUsers.route) {
-                currentUser?.let { user ->
-                    if (user.role == "Admin") {
-                        AdminUsersScreen(
-                            userRepository = app.userRepository,
-                            onNavigateBack = { navController.popBackStack() }
-                        )
-                    }
-                }
+                AdminUsersScreen(
+                    userRepository = app.userRepository,
+                    onNavigateBack = { navController.popBackStack() }
+                )
             }
             composable(Screen.Profile.route) {
                 currentUser?.let { user ->
