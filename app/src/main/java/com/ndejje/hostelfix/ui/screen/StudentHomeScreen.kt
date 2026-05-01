@@ -55,24 +55,7 @@ fun StudentHomeScreen(
             )
             
             Spacer(modifier = Modifier.height(dimensionResource(R.dimen.spacer_large)))
-            
-            // Fast navigation button to My Complaints
-            Button(
-                onClick = onNavigateToMyComplaints,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(stringResource(R.string.my_complaints))
-            }
-            
-            Spacer(modifier = Modifier.height(dimensionResource(R.dimen.spacer_medium)))
-            
-            // Fast navigation button to Profile
-            Button(
-                onClick = onNavigateToProfile,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(stringResource(R.string.profile))
-            }
+
         }
     }
 }
