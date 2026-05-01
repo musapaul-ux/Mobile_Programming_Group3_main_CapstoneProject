@@ -42,6 +42,7 @@ import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -49,7 +50,6 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.ndejje.hostelfix.R
 import com.ndejje.hostelfix.data.local.User
-import com.ndejje.hostelfix.data.repository.UserRepository
 import com.ndejje.hostelfix.ui.components.UserDialog
 import com.ndejje.hostelfix.viewmodel.AppViewModelProvider
 import com.ndejje.hostelfix.viewmodel.ThemeViewModel
@@ -62,7 +62,7 @@ import java.io.FileOutputStream
 @Composable
 fun ProfileScreen(
     user: User,
-    userRepository: UserRepository,
+    onUpdateUser: (User) -> Unit,
     onLogout: () -> Unit,
     onNavigateBack: () -> Unit
 ) {
@@ -83,16 +83,7 @@ fun ProfileScreen(
             scope.launch {
                 val internalPath = saveImageToInternalStorage(context, selectedUri, user.id)
                 if (internalPath != null) {
-                    userRepository.insertUser(
-                        User(
-                            id = user.id,
-                            name = user.name,
-                            email = user.email,
-                            password = user.password,
-                            role = user.role,
-                            profilePictureUri = internalPath
-                        )
-                    )
+                    onUpdateUser(user.copy(profilePictureUri = internalPath))
                 }
             }
         }
@@ -246,42 +237,6 @@ fun ProfileScreen(
 
                     Spacer(modifier = Modifier.height(32.dp))
 
-                    // Dark Mode Toggle Section
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                        ),
-                        shape = MaterialTheme.shapes.medium
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .padding(dimensionResource(R.dimen.padding_medium))
-                                .fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    imageVector = if (isDarkMode) Icons.Default.DarkMode else Icons.Default.LightMode,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                                Spacer(modifier = Modifier.width(16.dp))
-                                Text(
-                                    text = if (isDarkMode) "Dark Mode" else "Light Mode",
-                                    style = MaterialTheme.typography.bodyLarge
-                                )
-                            }
-                            Switch(
-                                checked = isDarkMode,
-                                onCheckedChange = { themeViewModel.toggleDarkMode(it) }
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(40.dp))
-
                     // Footer Actions
                     Button(
                         onClick = onLogout,
@@ -310,19 +265,14 @@ fun ProfileScreen(
                     showRoleSelection = false,
                     onDismiss = { showEditDialog = false },
                     onConfirm = { name, email, password, _ ->
-                        scope.launch {
-                            userRepository.insertUser(
-                                User(
-                                    id = user.id,
-                                    name = name,
-                                    email = email,
-                                    password = password,
-                                    role = user.role,
-                                    profilePictureUri = user.profilePictureUri
-                                )
+                        onUpdateUser(
+                            user.copy(
+                                name = name,
+                                email = email,
+                                password = password
                             )
-                            showEditDialog = false
-                        }
+                        )
+                        showEditDialog = false
                     }
                 )
             }
@@ -440,7 +390,7 @@ fun ProfileInfoCard(icon: ImageVector, label: String, value: String) {
     }
 }
 
-suspend fun saveImageToInternalStorage(context: Context, uri: Uri, userId: Int): String? = withContext(Dispatchers.IO) {
+private suspend fun saveImageToInternalStorage(context: Context, uri: Uri, userId: Int): String? = withContext(Dispatchers.IO) {
     try {
         val inputStream = context.contentResolver.openInputStream(uri)
         val file = File(context.filesDir, "profile_pic_${userId}.jpg")
